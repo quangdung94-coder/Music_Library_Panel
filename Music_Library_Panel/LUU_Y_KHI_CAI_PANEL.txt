@@ -1,0 +1,101 @@
+﻿LƯU Ý KHI CÀI VÀ DÙNG PANEL MUSIC LIBRARY CHO DAVINCI RESOLVE
+==============================================================
+
+1. YÊU CẦU TRƯỚC KHI CÀI
+------------------------
+- Phải là DaVinci Resolve STUDIO (bản trả phí). Bản miễn phí không hiện được panel.
+- Windows 10/11 hoặc macOS.
+- Tắt HẲN Resolve rồi mở lại sau mỗi lần cài hoặc thay file (đóng project chưa đủ).
+
+2. CÁCH CÀI NHANH
+-----------------
+- Giải nén file Music_Library_Panel_v1.zip trước, đừng chạy trực tiếp trong file zip.
+- Windows: bấm đúp install_windows.bat, bấm Yes khi Windows hỏi quyền quản trị.
+- Mac: bấm chuột phải install_mac.command, chọn Open, nhập mật khẩu máy Mac
+  (gõ mật khẩu sẽ không thấy chữ hiện ra, đó là bình thường).
+- Thấy chữ "CAI DAT XONG" là được. Mở panel: Workspace > Workflow Integrations > Music Library.
+
+3. NƠI PANEL ĐƯỢC CÀI VÀO
+-------------------------
+- Windows: C:\ProgramData\Blackmagic Design\DaVinci Resolve\Support\Workflow Integration Plugins\Music_Library_Plugin
+- Mac:     /Library/Application Support/Blackmagic Design/DaVinci Resolve/Workflow Integration Plugins/Music_Library_Plugin
+- Nếu chưa có thư mục "Workflow Integration Plugins" thì tự tạo mới đúng tên đó.
+- Thư mục Music_Library_Plugin phải có đủ 9 file: manifest.xml, package.json, main.js, preload.js,
+  index.html, analyze_music.py, sync_runner.py, sync_engine.py và WorkflowIntegration.node.
+  File WorkflowIntegration.node KHÔNG chép từ máy khác sang, phải lấy từ thư mục SamplePlugin của chính máy đó
+  (trong Resolve: Help > Documentation > Developer > Workflow Integrations > Examples > SamplePlugin).
+  File cài tự động đã làm bước này giúp bạn.
+
+4. LẦN ĐẦU MỞ PANEL TRÊN MÁY MỚI
+--------------------------------
+- Panel báo "Không tìm thấy thư mục nhạc" là bình thường (ổ D: có thể không có trên máy mới).
+- Bấm nút có biểu tượng thư mục ở đầu danh sách để chọn lại thư mục:
+  tab Nhạc chọn thư mục nhạc, tab SFX chọn thư mục SFX.
+- Bên trong thư mục nhạc/SFX nên giữ nguyên cách sắp xếp thư mục con như máy cũ.
+- Bấm "Quét thư mục" để thêm file mới vào panel.
+
+5. MANG DANH SÁCH CŨ SANG MÁY MỚI
+---------------------------------
+- Copy file library.json ở máy cũ:
+    Windows: Documents\MusicPanel\library.json
+    Mac:     Documents/MusicPanel/library.json
+- Dán vào cùng vị trí trên máy mới (tạo thư mục MusicPanel nếu chưa có), TRƯỚC KHI mở panel lần đầu.
+- File này giữ toàn bộ: danh sách bài và SFX, tag, yêu thích, loại video (Wedding film / Event),
+  điểm In/Out và BPM đã phân tích.
+- NÊN SAO LƯU library.json thỉnh thoảng. Mất file này là mất hết tag và phân loại bạn đã gắn.
+
+6. PHÂN TÍCH BPM TỰ ĐỘNG (KHÔNG BẮT BUỘC)
+-----------------------------------------
+- Cần cài Python và thư viện librosa. Không cài thì panel vẫn chạy, chỉ là file mới quét chưa có BPM.
+- Windows: cài Python từ python.org, nhớ TÍCH ô "Add python.exe to PATH".
+  Rồi mở Command Prompt, gõ:  pip install librosa
+- Mac: cài Python từ python.org (.pkg). Rồi mở Terminal, gõ:  python3 -m pip install librosa
+- Nếu Python nằm ở chỗ khác: tạo file Documents/MusicPanel/python_path.txt chỉ chứa
+  đường dẫn tới file python (một dòng duy nhất).
+- File .aac cần cài thêm ffmpeg mới phân tích được, nếu không sẽ báo "Lỗi phân tích".
+- Mỗi bài mất khoảng 2 giây để phân tích. Số BPM đôi khi lệch gấp đôi hoặc một nửa, đó là hạn chế của cách dò nhịp tự động.
+
+7. THAY FILE KHI CẬP NHẬT PANEL
+-------------------------------
+- Chỉ cần dán đè (Replace) các file được gửi vào thư mục Music_Library_Plugin, rồi tắt hẳn và mở lại Resolve.
+- Danh sách và tag của bạn nằm ở Documents\MusicPanel\library.json nên KHÔNG bị mất khi thay file.
+- Không xóa file WorkflowIntegration.node trong thư mục plugin.
+
+8. KHI DÙNG PANEL
+-----------------
+- + Media: import bài vào Media Pool (bin 02_music cho nhạc, 03_sfx cho SFX). SFX tự tạo bin con theo thư mục.
+- File đã có trong bin 02_music / 03_sfx (kể cả các bin con bên trong) hoặc chỗ khác trong Media Pool thì
+  panel báo "đã tồn tại" và không import lại. + Timeline cũng dừng luôn, không đặt bài vào timeline
+  (muốn dùng thì kéo clip có sẵn từ Media Pool xuống timeline).
+- + Timeline: cần đã mở một project VÀ một timeline. Bài được đặt ở CUỐI timeline.
+- In/Out: nghe bài, bấm I (hoặc nút In) và O (hoặc nút Out). Bấm + Media hoặc + Timeline thì bài được
+  import đầy đủ và giữ đoạn In/Out đã chọn.
+- Nút xóa: "Chỉ xóa khỏi panel" thì file vẫn còn trong thư mục (bấm quét sẽ thêm lại).
+  "Xóa luôn file" thì file được chuyển vào Thùng rác của máy, khôi phục được.
+- File dưới 30 giây hoặc trên 15 phút trong tab Nhạc mặc định bị ẩn, bỏ tick ở bộ lọc thời lượng để hiện lại.
+- Thanh sóng âm không hiện với file lớn hơn 80MB (nhạc vẫn phát bình thường).
+
+9. NẾU GẶP LỖI
+--------------
+- Không thấy Music Library trong menu Workflow Integrations:
+  kiểm tra là bản Studio, thư mục đúng đường dẫn mục 3, có đủ file WorkflowIntegration.node, rồi tắt hẳn và mở lại Resolve.
+- "Chưa mở project nào" hoặc "Chưa mở timeline nào": mở project/timeline trong Resolve rồi bấm lại.
+- "Không tìm thấy thư mục nhạc/SFX": bấm nút thư mục để chọn lại (mục 4).
+- Nhạc không phát: kiểm tra file còn trong thư mục và đã chọn đúng thư mục gốc.
+- "Lỗi phân tích" hoặc không có BPM: kiểm tra mục 6 (Python, librosa, file aac cần ffmpeg).
+- Đoạn In/Out trên timeline bị lệch: ghi lại bài nào, lệch bao nhiêu giây để nhờ chỉnh lại.
+  (Chức năng này chưa được kiểm tra hết trên Resolve thật, nên hãy thử trên project nháp trước.)
+- Trên máy Mac, nếu bấm quét mà không phân tích được BPM: dùng file python_path.txt ở mục 6.
+
+10. LƯU Ý RIÊNG CHO MAC
+-----------------------
+- Bộ cài này chưa được thử trên máy Mac thật. Lần cài đầu hãy xem kỹ có báo lỗi không.
+- Nếu install_mac.command báo không tìm thấy WorkflowIntegration.node, làm theo cách cài thủ công trong README_CAI_DAT.txt.
+- Nếu Mac báo "không xác định được nhà phát triển": bấm chuột phải vào file rồi chọn Open (không bấm đúp).
+
+11. TAB AUDIO SYNC (thay cho công cụ Tascam Sync cũ)
+----------------------------------------------------
+- Cài một lần: pip install numpy imageio-ffmpeg   (Mac: python3 -m pip install numpy imageio-ffmpeg)
+- Dùng: tab Audio Sync > chọn file Audio Sync (tiếng chuẩn) > chọn clip máy quay > Phân tích > Tạo timeline.
+- Không cần bật "External scripting" như công cụ cũ, vì giờ chạy ngay trong panel.
+- Phần "Tạo timeline" chưa thử trên Resolve thật, hãy thử trên project nháp trước.

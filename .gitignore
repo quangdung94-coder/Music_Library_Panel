@@ -1,0 +1,10 @@
+# File cua Blackmagic, lay tu SamplePlugin tren tung may, khong dua len repo
+WorkflowIntegration.node
+# Du lieu ca nhan cua panel
+library.json
+python_path.txt
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+*.zip

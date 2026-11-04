@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BlackmagicDesign>
+    <Plugin>
+        <Id>com.musiclibrary.resolve.panel</Id>
+        <Name>Music Library</Name>
+        <Version>1.0</Version>
+        <Description>Tim nhac va dua vao Media Pool / Timeline</Description>
+        <FilePath>main.js</FilePath>
+    </Plugin>
+</BlackmagicDesign>

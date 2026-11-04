@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thư viện Nhạc & SFX - DaVinci Resolve</title>
+<style>
+:root{--bg:#15171d;--sf:#1d2029;--sf2:#262a36;--ln:#2d3240;--tx:#ece9e2;--mu:#8e93a4;--ac:#f2b84b;--ac2:#3a2f18;--bad:#ff8a7a;--hl:#f6c344}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--tx);font:400 14px/1.45 "Be Vietnam Pro","Segoe UI",system-ui,sans-serif;display:flex;flex-direction:column}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+
+/* Header */
+header{display:flex;gap:18px;align-items:center;padding:12px 24px;border-bottom:1px solid var(--ln);background:var(--bg)}
+.tabs-nav{display:flex;background:var(--sf);border:1px solid var(--ln);border-radius:999px;padding:3px;gap:4px}
+.tab-btn{display:flex;align-items:center;gap:7px;padding:6px 16px;border-radius:999px;font-size:13px;font-weight:500;color:var(--mu);transition:all .15s}
+.tab-btn:hover{color:var(--tx)}
+.tab-btn.on{background:var(--ac);color:#1a1405;font-weight:700}
+.tab-badge{font-size:11px;padding:1px 7px;border-radius:999px;background:var(--sf2);color:var(--mu)}
+.tab-btn.on .tab-badge{background:rgba(0,0,0,0.22);color:#1a1405;font-weight:700}
+
+#q{flex:1;max-width:560px;background:var(--sf);border:1px solid var(--ln);border-radius:999px;color:var(--tx);padding:10px 18px;font:inherit}
+#q::placeholder{color:var(--mu)}
+#count{color:var(--mu);white-space:nowrap;font-size:13px}
+
+/* Main */
+main{flex:1;display:flex;min-height:0}
+aside{width:260px;flex:none;overflow:auto;padding:16px 20px;border-right:1px solid var(--ln)}
+aside h3{margin:16px 0 8px;font-size:12.5px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:0.5px}
+aside h3:first-child{margin-top:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:5px 12px;border-radius:999px;border:1px solid var(--ln);background:var(--sf);font-size:13px;transition:all .15s}
+.chip:hover{border-color:var(--mu)}
+.chip[aria-pressed=true]{background:var(--ac);border-color:var(--ac);color:#1a1405;font-weight:600}
+.rng{display:flex;gap:8px;align-items:center;color:var(--mu)}
+.rng input{width:100%;min-width:0;background:var(--sf);border:1px solid var(--ln);border-radius:8px;color:var(--tx);padding:6px 8px;font:inherit}
+label.ck{display:flex;gap:8px;align-items:center;margin-top:8px;color:var(--tx);font-size:13px;cursor:pointer}
+.reset{margin-top:20px;color:var(--mu);text-decoration:underline;cursor:pointer;font-size:13px}
+.reset:hover{color:var(--tx)}
+
+/* Section & List */
+section{flex:1;min-width:0;overflow:auto;padding:8px 24px 200px}
+.bar{display:flex;gap:10px;align-items:center;padding:10px 0;color:var(--mu);flex-wrap:wrap}
+.bar select{background:var(--sf);border:1px solid var(--ln);color:var(--tx);border-radius:8px;padding:6px 10px;font:inherit}
+.row{display:grid;grid-template-columns:40px minmax(0,1fr) 74px 64px 90px 50px 240px;gap:12px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--ln);border-radius:8px}
+.row:hover{background:var(--sf)}
+.row.on{background:var(--ac2)}
+.pb{width:36px;height:36px;border-radius:50%;background:var(--sf2);display:grid;place-items:center;font-size:12px;transition:all .15s}
+.row.on .pb,.pb:hover{background:var(--ac);color:#1a1405}
+.nm{min-width:0}
+.nm b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tg{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;align-items:center}
+.t{font-size:11px;padding:1px 7px;border-radius:999px;background:var(--sf2);color:var(--mu)}
+.t.u{background:#2a3350;color:#b9c6ff;cursor:pointer}
+.t.add{background:none;border:1px dashed var(--ln);cursor:pointer}
+.t.hl-jump{background:#382b13;border:1px solid #785a21;color:#f6c344;cursor:pointer;font-weight:500;transition:all .15s}
+.t.hl-jump:hover{background:var(--ac);color:#1a1405}
+.t.sfx-cat{background:#1f332c;border:1px solid #2f5647;color:#7ee4be;font-weight:500}
+.num{color:var(--mu);font-variant-numeric:tabular-nums;font-size:13px}
+.en{height:6px;border-radius:3px;background:var(--sf2);overflow:hidden}
+.en i{display:block;height:100%;background:var(--ac)}
+.ex{font-size:12px;color:var(--mu)}
+.ic{display:flex;gap:6px;justify-content:flex-end;align-items:center}
+.ic button{padding:4px 6px;border-radius:6px;color:var(--mu)}
+.ic button:hover{background:var(--sf2);color:var(--tx)}
+.ic .ac{font-size:12px;padding:4px 9px;border:1px solid var(--ln);color:var(--tx);border-radius:999px;white-space:nowrap}
+.ic .ac:hover{background:var(--ac);border-color:var(--ac);color:#1a1405}
+.ic .fv.on{color:var(--ac)}
+.empty{padding:60px 0;text-align:center;color:var(--mu)}
+
+/* Footer Player */
+footer{position:fixed;left:0;right:0;bottom:0;background:var(--sf);border-top:1px solid var(--ln);display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,2.4fr) 140px;gap:18px;align-items:center;padding:10px 24px;z-index:5}
+#np{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+#np small{display:block;color:var(--mu);font-weight:400}
+.ctl{display:flex;align-items:center;gap:10px}
+.ctl button.big{width:40px;height:40px;border-radius:50%;background:var(--ac);color:#1a1405;font-size:15px;display:grid;place-items:center}
+#seek{flex:1;accent-color:var(--ac);cursor:pointer}
+#vol{width:100%;accent-color:var(--ac);cursor:pointer}
+
+/* Highlight Button */
+.hl-toggle{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:999px;border:1px solid var(--ln);background:var(--sf2);font-size:12px;color:var(--mu);cursor:pointer;white-space:nowrap;transition:all .15s}
+.hl-toggle:hover{border-color:var(--ac);color:var(--tx)}
+.hl-toggle.on{background:var(--ac2);border-color:var(--ac);color:var(--ac);font-weight:600}
+.hl-spark{font-size:13px}
+
+/* Alerts and Modals */
+#toast{position:fixed;left:50%;bottom:150px;transform:translateX(-50%);background:var(--bad);color:#2a0d08;padding:8px 16px;border-radius:8px;font-weight:500;display:none;max-width:90%;z-index:20;font-size:13px}
+#toast.ok{background:#7fd6a3;color:#0d2a18}
+#warn{background:#3a2420;border:1px solid var(--bad);color:var(--bad);padding:10px 14px;border-radius:8px;margin:10px 0;font-size:13px}
+#dlg{position:fixed;inset:0;background:#000a;display:none;place-items:center;z-index:30}
+#dlg .box{background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:20px 24px;max-width:480px;line-height:1.6}
+#dlg .bt{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+#ddisk{border-color:var(--bad);color:var(--bad)}
+.seg{display:inline-flex;margin-left:6px;border:1px solid var(--ln);border-radius:999px;overflow:hidden}
+.sg{font-size:11px;padding:1px 8px;color:var(--mu)}
+.sg:not(.on):hover{background:var(--sf2);color:var(--tx)}
+.sg.on{background:var(--ac);color:#1a1405;font-weight:600}
+.sg.on[data-c="None"]{background:var(--sf2);color:var(--tx)}
+
+@media(max-width:960px){aside{display:none}.row{grid-template-columns:40px minmax(0,1fr) 60px 60px}.row .en,.row .ex,.row .bp{display:none}footer{grid-template-columns:1fr;gap:6px}#vol{display:none}header{flex-wrap:wrap}}
+.wavebox{grid-column:1/-1;display:flex;align-items:center;gap:10px}
+#wave{flex:1;height:52px;min-width:0;background:var(--bg);border:1px solid var(--ln);border-radius:8px;cursor:pointer;display:block}
+#seek{display:none}
+footer{gap:8px 18px;padding:8px 24px}
+.io-btn{padding:4px 10px;border:1px solid var(--ln);border-radius:999px;font-size:12px;background:var(--sf2)}
+.io-btn:hover{border-color:var(--ac);color:var(--ac)}
+#io{font-size:12px;color:#c9bcff;white-space:nowrap}
+.t.io-tag{background:#2a2540;border:1px solid #5b4f94;color:#c9bcff;cursor:pointer}
+#tree{font-size:13px;margin-bottom:6px}
+.tr-row{display:flex;align-items:center;gap:4px;padding:3px 6px;border-radius:6px;cursor:pointer}
+.tr-row:hover{background:var(--sf)}
+.tr-row.on{background:var(--ac2);color:var(--ac);font-weight:600}
+.tr-arr{width:14px;text-align:center;color:var(--mu);font-size:10px;flex:none}
+.tr-nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tr-ct{font-size:11px;color:var(--mu)}
+.tr-kids{margin-left:12px;border-left:1px solid var(--ln)}
+
+/* ===== Giao diện kiểu DaVinci Resolve ===== */
+:root{--bg:#161616;--sf:#232323;--sf2:#2c2c2c;--ln:#3a3a3a;--tx:#d4d4d4;--mu:#9a9a9a;--ac:#e5762f;--ac2:#2b4d73}
+body{font:400 12px/1.4 "Segoe UI",Roboto,system-ui,sans-serif}
+header{background:#2a2a2a;padding:0 16px;height:44px;gap:16px;border-bottom:1px solid #0e0e0e}
+.tabs-nav{background:none;border:0;border-radius:0;padding:0;gap:0;height:100%}
+.tab-btn{border-radius:0;height:100%;padding:0 18px;border-top:2px solid transparent;font-size:13px;font-weight:500}
+.tab-btn.on{background:#1b1b1b;color:#fff;border-top-color:var(--ac);font-weight:600}
+.tab-badge,.tab-btn.on .tab-badge{background:#1c1c1c;color:var(--mu);border-radius:9px;font-weight:400}
+#q{height:28px;padding:0 12px;border-radius:4px;background:#1b1b1b;max-width:520px;font:inherit}
+#count{font-size:12px}
+aside{width:236px;background:#232323;border-right:1px solid #0e0e0e;padding:10px 12px}
+aside h3{font-size:11px}
+.chip{border-radius:3px;background:#2c2c2c;border-color:#3d3d3d;padding:3px 10px;font-size:12px}
+.t,.seg,.hl-toggle,.io-btn,.ic .ac{border-radius:3px}
+.ic .ac{padding:3px 9px}
+section{background:#1b1b1b;padding:0 0 200px}
+.bar{background:var(--sf);border-bottom:1px solid #0e0e0e;padding:8px 14px;gap:10px}
+.bar select{border-radius:3px;background:#2c2c2c;border-color:#3d3d3d;padding:3px 8px}
+#addAll{background:var(--ac);border-color:var(--ac);color:#161616;font-weight:600}
+#warn{margin:10px 14px}
+.listhead{display:grid;grid-template-columns:40px minmax(0,1fr) 74px 64px 90px 50px 240px;gap:12px;align-items:center;padding:0 14px;height:26px;background:#2a2a2a;color:var(--mu);font-size:11px;border-bottom:1px solid #0e0e0e}
+.row{border-radius:0;padding:0 14px;min-height:48px;border-bottom:1px solid #262626}
+.row:hover{background:#222}
+.row.on{background:#2b4d73;color:#fff}
+.row.on .pb{background:var(--ac);color:#161616}
+.row.on .t{background:#1f3a58;color:#cfe0f5}
+.row.on .t.io-tag{background:#4a3f7a;color:#e4dcff}
+.row.on .num,.row.on .ex{color:#dbe8f8}
+.tr-row{border-radius:0;height:24px;padding:0 8px}
+.tr-row.on{background:#2b4d73;color:#fff;font-weight:500}
+#wave{border-radius:3px;border-color:#333;background:#161616}
+#io{color:#b9c8ff}
+footer{background:#232323;border-top:1px solid #0e0e0e}
+@media(max-width:960px){.listhead{display:none}}
+
+/* ===== Tab Audio Sync ===== */
+main.sync > aside, main.sync > section{display:none}
+#syncView{display:none;flex:1;min-width:0;overflow:auto;padding:12px 16px 24px;flex-direction:column;gap:12px;background:#1b1b1b}
+main.sync #syncView{display:flex}
+.sy-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sy-box{background:#232323;border:1px solid #0e0e0e;border-radius:3px;display:flex;flex-direction:column;min-width:0}
+.sy-box h4{margin:0;padding:7px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mu);background:#2a2a2a;border-bottom:1px solid #0e0e0e}
+.sy-btns{display:flex;gap:8px;padding:8px 12px;flex-wrap:wrap}
+.sy-files{max-height:120px;overflow:auto;padding:0 12px 8px;font-size:12px;color:var(--tx)}
+.sy-files div{display:flex;gap:8px;padding:2px 0;border-bottom:1px solid #2c2c2c}
+.sy-files span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sy-files b{cursor:pointer;color:var(--mu);font-weight:400}
+.sy-files .none{color:var(--mu);border:0}
+.sy-set{display:flex;gap:18px;align-items:center;flex-wrap:wrap;padding:8px 12px;color:var(--mu)}
+.sy-set input[type=number]{width:70px;background:#1b1b1b;border:1px solid #3d3d3d;color:var(--tx);border-radius:3px;padding:3px 6px;font:inherit}
+.sy-set label{display:flex;gap:6px;align-items:center}
+.sy-go{background:var(--ac)!important;border-color:var(--ac)!important;color:#161616!important;font-weight:600}
+#syBar{height:6px;background:#2c2c2c;border-radius:3px;overflow:hidden;flex:1;min-width:120px}
+#syBar i{display:block;height:100%;width:0;background:var(--ac);transition:width .2s}
+.sy-run{display:flex;gap:10px;align-items:center;padding:8px 12px;flex-wrap:wrap}
+#syTbl{width:100%;border-collapse:collapse;font-size:12px}
+#syTbl th{text-align:left;font-weight:500;color:var(--mu);font-size:11px;padding:5px 10px;background:#2a2a2a;position:sticky;top:0}
+#syTbl td{padding:5px 10px;border-bottom:1px solid #262626;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.st{padding:1px 8px;border-radius:3px;font-size:11px;font-weight:600;color:#161616}
+.st.ok{background:#5fbf6a}.st.okc{background:#9ad9a1}.st.chk{background:#e8d04f}.st.est{background:#e89a4f}.st.fail{background:#e8695f}
+#syLog{margin:0;padding:8px 12px;max-height:110px;overflow:auto;font:11px/1.5 Consolas,monospace;color:var(--mu);white-space:pre-wrap}
+@media(max-width:900px){.sy-cols{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="tabs-nav">
+    <button class="tab-btn on" id="tabMusic"><span>🎵 Nhạc</span><span class="tab-badge" id="bMusic">0</span></button>
+    <button class="tab-btn" id="tabSfx"><span>🔊 SFX</span><span class="tab-badge" id="bSfx">0</span></button>
+    <button class="tab-btn" id="tabSync"><span>🎚 Audio Sync</span></button>
+  </div>
+  <input id="q" type="search" placeholder="Tìm theo tên bài, tag…" aria-label="Tìm kiếm">
+  <span id="count"></span>
+</header>
+<main>
+<aside>
+  <!-- BỘ LỌC CHO TAB MUSIC -->
+  <div id="filterMusic">
+    <h3>Loại video</h3><div class="chips" id="fCat"></div>
+    <h3>Năng lượng</h3><div class="chips" id="fLevel"></div>
+    <h3>Cảm giác (gợi ý tự động)</h3><div class="chips" id="fMood"></div>
+    <h3>Định dạng</h3><div class="chips" id="fExt"></div>
+    <h3>BPM</h3>
+    <div class="rng"><input id="bmin" type="number" placeholder="Từ"><span>–</span><input id="bmax" type="number" placeholder="Đến"></div>
+    <label class="ck"><input type="checkbox" id="alt"> Tính cả nửa nhịp và gấp đôi</label>
+    <h3>Thời lượng (phút)</h3>
+    <div class="rng"><input id="dmin" type="number" step="0.5" placeholder="Từ"><span>–</span><input id="dmax" type="number" step="0.5" placeholder="Đến"></div>
+    <label class="ck"><input type="checkbox" id="odd" checked> Ẩn file dưới 30 giây hoặc trên 15 phút</label>
+    <h3>Của tôi</h3>
+    <div class="chips"><button class="chip" id="favOnly" aria-pressed="false">★ Yêu thích</button></div>
+  </div>
+
+  <!-- BỘ LỌC CHO TAB SFX -->
+  <div id="filterSfx" style="display:none">
+    <h3>Thư mục</h3><div id="tree"></div>
+    <h3>Phân loại SFX</h3><div class="chips" id="fSfxCat"></div>
+    <h3>Thời lượng</h3><div class="chips" id="fSfxDur"></div>
+    <h3>Năng lượng</h3><div class="chips" id="fSfxLevel"></div>
+    <h3>Định dạng</h3><div class="chips" id="fSfxExt"></div>
+    <h3>Của tôi</h3>
+    <div class="chips"><button class="chip" id="favSfxOnly" aria-pressed="false">★ Yêu thích</button></div>
+  </div>
+
+  <button class="reset" id="reset">Xóa bộ lọc</button>
+</aside>
+
+<section>
+  <div id="warn" style="display:none"></div>
+  <div class="bar">
+    <span>Sắp xếp</span>
+    <select id="sort">
+      <option value="title">Tên A–Z</option>
+      <option value="bpmA">BPM tăng dần</option>
+      <option value="bpmD">BPM giảm dần</option>
+      <option value="enD">Năng lượng cao trước</option>
+      <option value="enA">Năng lượng thấp trước</option>
+      <option value="durA">Ngắn trước</option>
+      <option value="durD">Dài trước</option>
+      <option value="newD">Mới thêm vào nhất</option>
+      <option value="newA">Thêm vào cũ nhất</option>
+    </select>
+    <button class="chip" id="pick" style="margin-left:auto"></button>
+    <button class="chip" id="scan">⟳ Quét thư mục</button>
+    <button class="chip" id="addAll">+ Thêm tất cả vào Media Pool</button>
+  </div>
+  <div class="listhead"><span></span><span>Tên</span><span id="hCol3">BPM</span><span>Dài</span><span>Năng lượng</span><span>Loại</span><span></span></div>
+  <div id="list"></div>
+</section>
+
+<div id="syncView">
+  <div class="sy-cols">
+    <div class="sy-box">
+      <h4>1. File Audio Sync (tiếng chuẩn)</h4>
+      <div class="sy-btns"><button class="chip" id="syAddRef">+ Chọn file…</button><button class="chip" id="syClrRef">Xóa hết</button></div>
+      <div class="sy-files" id="syRefs"></div>
+    </div>
+    <div class="sy-box">
+      <h4>2. Clip máy quay</h4>
+      <div class="sy-btns"><button class="chip" id="syFromPool">+ Lấy clip đang chọn trong Media Pool</button><button class="chip" id="syAddCam">+ Chọn file…</button><button class="chip" id="syClrCam">Xóa hết</button></div>
+      <div class="sy-files" id="syCams"></div>
+    </div>
+  </div>
+  <div class="sy-box">
+    <h4>3. Cài đặt</h4>
+    <div class="sy-set">
+      <label>Tìm theo đồng hồ máy quay ± <input id="syWin" type="number" value="180" min="10" max="3600"> giây</label>
+      <label>Độ chắc chắn tối thiểu <input id="syRatio" type="number" value="1.5" step="0.05" min="1" max="5"></label>
+      <label><input type="checkbox" id="syDrift" checked> Đo độ trôi giữa 2 máy</label>
+      <label><input type="checkbox" id="syKeep"> Giữ tiếng gốc của máy quay trong timeline</label>
+    </div>
+    <div class="sy-run">
+      <button class="chip sy-go" id="syGo">▶ Phân tích</button>
+      <button class="chip" id="syStop" disabled>■ Dừng</button>
+      <div id="syBar"><i></i></div><span id="syMsg" style="color:var(--mu)"></span>
+    </div>
+  </div>
+  <div class="sy-box">
+    <h4>4. Kết quả</h4>
+    <div style="overflow:auto;max-height:340px"><table id="syTbl"><thead><tr><th>Clip máy quay</th><th>File Audio Sync</th><th>Vị trí</th><th>Trạng thái</th><th>Trôi (ms)</th><th>Ghi chú</th></tr></thead><tbody id="syRows"></tbody></table></div>
+    <div class="sy-btns"><button class="chip sy-go" id="syApply" disabled>Tạo timeline đã sync trong Resolve</button><button class="chip" id="syCsv" disabled>Xuất bảng CSV</button><span id="syNote" style="color:var(--mu);align-self:center"></span></div>
+  </div>
+  <pre id="syLog"></pre>
+</div>
+</main>
+
+<footer>
+  <div class="wavebox"><span class="num" id="cur">0:00</span><canvas id="wave"></canvas><span class="num" id="tot">0:00</span></div>
+  <div id="np">Chọn một bài để nghe<small></small></div>
+  <div class="ctl">
+    <button id="prev" aria-label="Bài trước">⏮</button>
+    <button class="big" id="pp" aria-label="Phát hoặc tạm dừng">▶</button>
+    <button id="next" aria-label="Bài tiếp">⏭</button>
+    <button id="hlToggle" class="hl-toggle on" title="Khi BẬT: Chọn bài sẽ tự động nhảy đến đoạn cao trào (Highlight) mà không cần nghe từ đầu">
+      <span class="hl-spark">✨</span> Highlight: <b id="hlState">BẬT</b>
+    </button>
+    <input id="seek" type="range" min="0" max="1000" value="0" aria-label="Tua">
+    <button class="io-btn" id="btnIn" title="Đặt điểm In tại vị trí đang nghe (phím I)">⟦ In</button>
+    <button class="io-btn" id="btnOut" title="Đặt điểm Out tại vị trí đang nghe (phím O)">Out ⟧</button>
+    <button class="io-btn" id="btnClr" title="Xóa In/Out">✕</button>
+    <span id="io"></span>
+  </div>
+  <input id="vol" type="range" min="0" max="100" value="80" aria-label="Âm lượng">
+</footer>
+
+<div id="dlg" role="dialog" aria-modal="true">
+  <div class="box">
+    <div id="dmsg"></div>
+    <div class="bt">
+      <button class="chip" id="dpanel">Chỉ xóa khỏi panel</button>
+      <button class="chip" id="ddisk">Xóa luôn file trên ổ cứng</button>
+      <button class="chip" id="dno">Hủy</button>
+    </div>
+  </div>
+</div>
+<div id="toast" role="alert"></div>
+<audio id="au" preload="none"></audio>
+
+<script>
+const SEED = [{"title": "Elvis Presley - Can't Help Falling In Love", "ext": ".mp3", "dur": 180.7, "bpm": 99.4, "en": 52, "level": "Trung bình", "moods": ["Chậm"], "i": 0, "n": "elvis presley - can't help falling in love", "added": 1793023642206, "rel": "(1) Elvis Presley - Can't Help Falling In Love (Official Audio) - YouTube.mp3", "fav": false, "tags": []}, {"title": "Golden Silence", "ext": ".mp3", "dur": 148.6, "bpm": 143.6, "en": 64, "level": "Trung bình", "moods": ["Nhanh", "Trầm"], "i": 1, "n": "golden silence", "added": 1793023642235, "rel": "(1) Golden Silence - YouTube.mp3", "fav": false, "tags": []}, {"title": "Goodnight My Love", "ext": ".mp3", "dur": 170.5, "bpm": 95.7, "en": 55, "level": "Trung bình", "moods": ["Chậm"], "i": 2, "n": "goodnight my love", "added": 1793023642260, "rel": "(1) Goodnight My Love - YouTube.mp3", "fav": false, "tags": []}, {"title": "một đời (Instrumental)", "ext": ".mp3", "dur": 328.3, "bpm": 136, "en": 32, "level": "Thấp", "moods": ["Nhanh", "Trầm"], "i": 3, "n": "mot doi (instrumental)", "added": 1793023642299, "rel": "(1) một đời (Instrumental) - YouTube.mp3", "fav": false, "tags": []}, {"title": "Time After Time (feat. Jordan Critz)- - Tyler Brown Williams", "ext": ".mp3", "dur": 203.1, "bpm": 129.2, "en": 80, "level": "Cao", "moods": ["Sôi động", "Vừa", "Sáng"], "i": 4, "n": "time after time (feat. jordan critz)- - tyler brown williams", "added": 1793023624780, "rel": "-Time After Time (feat. Jordan Critz)- - Tyler Brown Williams - YouTube.mp3", "fav": false, "tags": []}, {"title": "18 Wedding Songs to Enhance your Wedding!", "ext": ".mp3", "dur": 222.9, "bpm": 136, "en": 69, "level": "Trung bình", "moods": ["Nhanh", "Sáng"], "i": 5, "n": "18 wedding songs to enhance your wedding!", "added": 1793023634333, "rel": "18 Wedding Songs to Enhance your Wedding!.mp3", "fav": false, "tags": []}, {"title": "Burn the Map", "ext": ".mp3", "dur": 144.3, "bpm": 117.5, "en": 100, "level": "Cao", "moods": ["Vừa", "Sáng"], "i": 6, "n": "burn the map", "added": 1793023627618, "rel": "6000740_alexgrohl_burn_the_map.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Chaos at the Spaceship", "ext": ".mp3", "dur": 38, "bpm": 123, "en": 85, "level": "Cao", "moods": ["Sôi động", "Vừa", "Sáng"], "i": 7, "n": "chaos at the spaceship", "added": 1793023627883, "rel": "6001111_out_of_flux_chaos_at_the_spaceship_short_version.mp3", "fav": false, "tags": [], "cat": "Event"}, {"title": "Peak Performance", "ext": ".mp3", "dur": 161.5, "bpm": 129.2, "en": 93, "level": "Cao", "moods": ["Sôi động", "Vừa"], "i": 8, "n": "peak performance", "added": 1793023632388, "rel": "6001687_balloonplanet_peak_performance.mp3", "fav": false, "tags": []}, {"title": "7년을 기다린 순간... 수지야!!!! '수지 - --' - 헨리(Henry) - 'It's You' - #나라는가수", "ext": ".mp3", "dur": 347.3, "bpm": 117.5, "en": 0, "level": "Thấp", "moods": ["Thư giãn", "Vừa", "Sáng"], "i": 9, "n": "7년을 기다린 순간... 수지야!!!! '수지 - --' - 헨리(henry) - 'it's you' - #나라는가수", "added": 1793023620277, "rel": "7년을 기다린 순간... 수지야!!!! '수지 - --' - 헨리(Henry) - 'It's You' - #나라는가수.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "A Couple Minutes", "ext": ".mp3", "dur": 212.1, "bpm": 129.2, "en": 83, "level": "Cao", "moods": ["Sôi động", "Vừa"], "i": 10, "n": "a couple minutes", "added": 1793023614914, "rel": "A Couple Minutes.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "A long road in the dunes  (Raymond Pauls Cover-Remix) - San1Project & SUNO", "ext": ".mp3", "dur": 294, "bpm": 99.4, "en": 66, "level": "Trung bình", "moods": ["Chậm"], "i": 11, "n": "a long road in the dunes  (raymond pauls cover-remix) - san1project & suno", "added": 1793023627961, "rel": "A long road in the dunes  (Raymond Pauls Cover-Remix) - San1Project & SUNO.mp3", "fav": false, "tags": []}, {"title": "A Thousand Miles (Cinematic Version)", "ext": ".mp3", "dur": 243.3, "bpm": 99.4, "en": 0, "level": "Thấp", "moods": ["Thư giãn", "Chậm"], "i": 12, "n": "a thousand miles (cinematic version)", "added": 1793023614804, "rel": "A Thousand Miles (Cinematic Version).mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Above the Lens", "ext": ".mp3", "dur": 238.1, "bpm": 89.1, "en": 0, "level": "Thấp", "moods": ["Thư giãn", "Chậm", "Trầm"], "i": 13, "n": "above the lens", "added": 1793023620312, "rel": "Above the Lens.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Against All Odds", "ext": ".mp3", "dur": 208.4, "bpm": 117.5, "en": 74, "level": "Cao", "moods": ["Vừa"], "i": 14, "n": "against all odds", "added": 1793023636569, "rel": "Against All Odds - YouTube.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Alex Warren - Ordinary", "ext": ".mp3", "dur": 185.9, "bpm": 112.3, "en": 89, "level": "Cao", "moods": ["Vừa"], "i": 15, "n": "alex warren - ordinary", "added": 1793023610489, "rel": "Alex Warren - Ordinary (Lyrics).mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "All of Me - John Legend - Violin and Guitar Cover - Daniel Jang", "ext": ".mp3", "dur": 280.9, "bpm": 123, "en": 79, "level": "Cao", "moods": ["Sôi động", "Vừa"], "i": 16, "n": "all of me - john legend - violin and guitar cover - daniel jang", "added": 1793023634388, "rel": "All of Me - John Legend - Violin and Guitar Cover - Daniel Jang.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Alone", "ext": ".mp3", "dur": 121.5, "bpm": 89.1, "en": 87, "level": "Cao", "moods": ["Chậm", "Sáng"], "i": 17, "n": "alone", "added": 1793023624910, "rel": "Alone - YouTube.mp3", "fav": false, "tags": []}, {"title": "Anomaly", "ext": ".mp3", "dur": 174.6, "bpm": 117.5, "en": 8, "level": "Thấp", "moods": ["Thư giãn", "Vừa", "Trầm"], "i": 18, "n": "anomaly", "added": 1793023614253, "rel": "Anomaly - YouTube.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Anyone Who Knows What Love Is (Will Understand)", "ext": ".mp3", "dur": 181.3, "bpm": 92.3, "en": 19, "level": "Thấp", "moods": ["Thư giãn", "Chậm", "Sáng"], "i": 19, "n": "anyone who knows what love is (will understand)", "added": 1793023625247, "rel": "Anyone Who Knows What Love Is (Will Understand) - YouTube.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Ardie Son - New Life", "ext": ".wav", "dur": 258.1, "bpm": 123, "en": 1, "level": "Thấp", "moods": ["Vừa"], "i": 20, "n": "ardie son - new life", "added": 1793023625356, "rel": "Ardie Son - New Life.wav", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Ariana Grande - supernatural", "ext": ".mp3", "dur": 163.7, "bpm": 103.4, "en": 97, "level": "Cao", "moods": ["Vừa", "Sáng"], "i": 21, "n": "ariana grande - supernatural", "added": 1793023624416, "rel": "Ariana Grande - supernatural (lyric visualizer).mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Ascent I Judah Earl #music #cinematic #rest", "ext": ".mp3", "dur": 192.9, "bpm": 123, "en": 47, "level": "Trung bình", "moods": ["Vừa"], "i": 22, "n": "ascent i judah earl #music #cinematic #rest", "added": 1793023614946, "rel": "Ascent I Judah Earl #music #cinematic #rest.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Ashes and Empires", "ext": ".mp3", "dur": 176, "bpm": 112.3, "en": 35, "level": "Trung bình", "moods": ["Vừa", "Trầm"], "i": 23, "n": "ashes and empires", "added": 1793023645020, "rel": "Ashes and Empires - YouTube.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Astral Genesis", "ext": ".mp3", "dur": 139.2, "bpm": 107.7, "en": 75, "level": "Cao", "moods": ["Vừa"], "i": 24, "n": "astral genesis", "added": 1793023642120, "rel": "Astral Genesis - YouTube.mp3", "fav": false, "tags": [], "cat": "Event"}, {"title": "audio 1", "ext": ".mp3", "dur": 954.5, "bpm": 129.2, "en": 24, "level": "Thấp", "moods": ["Vừa", "Sáng"], "i": 25, "n": "audio 1", "added": 1793023632591, "rel": "audio 1.mp3", "fav": false, "tags": []}, {"title": "Be Future Bass (medium)", "ext": ".mp3", "dur": 56.2, "bpm": 152, "en": 97, "level": "Cao", "moods": ["Sôi động", "Nhanh", "Sáng"], "i": 26, "n": "be future bass (medium)", "added": 1793023603766, "rel": "Be Future Bass (medium).mp3", "fav": false, "tags": [], "cat": "Event"}, {"title": "Beautiful in White x Canon in D (Piano Cover by Riyandi Kusuma)", "ext": ".mp3", "dur": 314.3, "bpm": 143.6, "en": 0, "level": "Thấp", "moods": ["Nhanh", "Trầm"], "i": 27, "n": "beautiful in white x canon in d (piano cover by riyandi kusuma)", "added": 1793023620899, "rel": "Beautiful in White x Canon in D (Piano Cover by Riyandi Kusuma).mp3", "fav": false, "tags": []}, {"title": "BEECH LOVE - Lifeline", "ext": ".mp3", "dur": 226.9, "bpm": 136, "en": 88, "level": "Cao", "moods": ["Sôi động", "Nhanh", "Sáng"], "i": 28, "n": "beech love - lifeline", "added": 1793023621719, "rel": "BEECH LOVE - Lifeline (Official Lyric Video).mp3", "fav": false, "tags": [], "cat": "None"}, {"title": "Beyond the Pulse by Varanthor - Suno", "ext": ".mp3", "dur": 139, "bpm": 99.4, "en": 66, "level": "Trung bình", "moods": ["Chậm"], "i": 29, "n": "beyond the pulse by varanthor - suno", "added": 1793023605897, "rel": "Beyond the Pulse by Varanthor - Suno.mp3", "fav": false, "tags": []}, {"title": "Beò - For the Rest of My Life", "ext": ".wav", "dur": 201.1, "bpm": 112.3, "en": 62, "level": "Trung bình", "moods": ["Vừa", "Sáng"], "i": 30, "n": "beo - for the rest of my life", "added": 1793023615295, "rel": "Beò - For the Rest of My Life.wav", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Bloom I Judah Earl #ambient #stressrelief #relaxingmusic", "ext": ".mp3", "dur": 134.7, "bpm": 129.2, "en": 53, "level": "Trung bình", "moods": ["Vừa"], "i": 31, "n": "bloom i judah earl #ambient #stressrelief #relaxingmusic", "added": 1793023638153, "rel": "Bloom I Judah Earl #ambient #stressrelief #relaxingmusic.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Blue - Yung Kai (Wedding Entrance Ver.)", "ext": ".mp3", "dur": 296.2, "bpm": 95.7, "en": 55, "level": "Trung bình", "moods": ["Chậm", "Trầm"], "i": 32, "n": "blue - yung kai (wedding entrance ver.)", "added": 1793023634492, "rel": "Blue - Yung Kai (Wedding Entrance Ver.).mp3", "fav": false, "tags": []}, {"title": "Bobby Quick - Without You - No Lead Vocals", "ext": ".wav", "dur": 232, "bpm": 117.5, "en": 76, "level": "Cao", "moods": ["Vừa", "Trầm"], "i": 33, "n": "bobby quick - without you - no lead vocals", "added": 1793023616087, "rel": "Bobby Quick - Without You - No Lead Vocals.wav", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Borrtex - Realization", "ext": ".mp3", "dur": 176.1, "bpm": 95.7, "en": 100, "level": "Cao", "moods": ["Chậm", "Trầm"], "i": 34, "n": "borrtex - realization", "added": 1793023645045, "rel": "Borrtex - Realization (Official Audio) - YouTube.mp3", "fav": false, "tags": []}, {"title": "Bruno Mars - 24K Magic", "ext": ".mp3", "dur": 226.8, "bpm": 107.7, "en": 94, "level": "Cao", "moods": ["Vừa", "Sáng"], "i": 35, "n": "bruno mars - 24k magic", "added": 1793023621922, "rel": "Bruno Mars - 24K Magic (Official Music Video).mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Bruno Mars - Thats What I Like", "ext": ".mp3", "dur": 210.9, "bpm": 136, "en": 92, "level": "Cao", "moods": ["Sôi động", "Nhanh", "Sáng"], "i": 36, "n": "bruno mars - thats what i like", "added": 1793023605949, "rel": "Bruno Mars - Thats What I Like [Official Music Video].mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "BÊN NHAU MÌNH LÀ NHÀ - VŨ CÁT TƯỜNG x PNJ - OFFICIAL MUSIC VIDEO", "ext": ".mp3", "dur": 234.8, "bpm": 95.7, "en": 71, "level": "Cao", "moods": ["Chậm", "Sáng"], "i": 37, "n": "ben nhau minh la nha - vu cat tuong x pnj - official music video", "added": 1793023616432, "rel": "BÊN NHAU MÌNH LÀ NHÀ - VŨ CÁT TƯỜNG x PNJ - OFFICIAL MUSIC VIDEO - YouTube.mp3", "fav": false, "tags": []}, {"title": "Chandelier - Postmodern Jukebox ft. Singing Sad Clown Puddles", "ext": ".mp3", "dur": 201.5, "bpm": 172.3, "en": 79, "level": "Cao", "moods": ["Sôi động", "Nhanh"], "i": 38, "n": "chandelier - postmodern jukebox ft. singing sad clown puddles", "added": 1793023642349, "rel": "Chandelier - Postmodern Jukebox ft. Singing Sad Clown Puddles - YouTube.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "CHỈ CẦN CÓ NHAU - VŨ CÁT TƯỜNG x PNJ - OFFICIAL MUSIC VIDEO", "ext": ".mp3", "dur": 269, "bpm": 136, "en": 59, "level": "Trung bình", "moods": ["Nhanh"], "i": 39, "n": "chi can co nhau - vu cat tuong x pnj - official music video", "added": 1793023616475, "rel": "CHỈ CẦN CÓ NHAU - VŨ CÁT TƯỜNG x PNJ - OFFICIAL MUSIC VIDEO.mp3", "fav": false, "tags": []}, {"title": "Cinematic Documentary Background Music [ No Copyright ] - Expedition", "ext": ".mp3", "dur": 180.9, "bpm": 136, "en": 65, "level": "Trung bình", "moods": ["Nhanh"], "i": 40, "n": "cinematic documentary background music [ no copyright ] - expedition", "added": 1793023605152, "rel": "Cinematic Documentary Background Music [ No Copyright ] - Expedition.mp3", "fav": false, "tags": []}, {"title": "Cinnamon Girl", "ext": ".mp3", "dur": 300.7, "bpm": 136, "en": 73, "level": "Cao", "moods": ["Sôi động", "Nhanh"], "i": 41, "n": "cinnamon girl", "added": 1793023645079, "rel": "Cinnamon Girl - YouTube.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "city sound effect", "ext": ".mp3", "dur": 5.1, "bpm": 112.3, "en": 0, "level": "Thấp", "moods": ["Thư giãn", "Vừa", "Sáng"], "i": 42, "n": "city sound effect", "added": 1793023641486, "rel": "city sound effect - YouTube.mp3", "fav": false, "tags": []}, {"title": "combat sport motivation", "ext": ".mp3", "dur": 67.2, "bpm": 123, "en": 48, "level": "Trung bình", "moods": ["Vừa", "Sáng"], "i": 43, "n": "combat sport motivation", "added": 1793023628079, "rel": "combat sport motivation.mp3", "fav": false, "tags": [], "cat": "Event"}, {"title": "Come on Let's Go", "ext": ".mp3", "dur": 228, "bpm": 143.6, "en": 86, "level": "Cao", "moods": ["Sôi động", "Nhanh"], "i": 44, "n": "come on let's go", "added": 1793023625989, "rel": "Come on Let's Go - YouTube.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Cordolium", "ext": ".mp3", "dur": 214.2, "bpm": 117.5, "en": 52, "level": "Trung bình", "moods": ["Vừa", "Sáng"], "i": 45, "n": "cordolium", "added": 1793023614845, "rel": "Cordolium.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "David A. Molina - Clair de Lune", "ext": ".mp3", "dur": 163.5, "bpm": 143.6, "en": 0, "level": "Thấp", "moods": ["Nhanh"], "i": 46, "n": "david a. molina - clair de lune", "added": 1793023645132, "rel": "David A. Molina - Clair de Lune - YouTube.mp3", "fav": false, "tags": []}, {"title": "Daydream", "ext": ".mp3", "dur": 172.3, "bpm": 123, "en": 98, "level": "Cao", "moods": ["Sôi động", "Vừa", "Sáng"], "i": 47, "n": "daydream", "added": 1793023645165, "rel": "Daydream - YouTube.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Disappear", "ext": ".mp3", "dur": 327.1, "bpm": 103.4, "en": 70, "level": "Cao", "moods": ["Vừa"], "i": 48, "n": "disappear", "added": 1793023609435, "rel": "Disappear.mp3", "fav": false, "tags": []}, {"title": "Dreams (Reprise) I Judah Earl & BODA #music #cinematic #orchestralmusic", "ext": ".mp3", "dur": 88.9, "bpm": 123, "en": 60, "level": "Trung bình", "moods": ["Vừa"], "i": 49, "n": "dreams (reprise) i judah earl & boda #music #cinematic #orchestralmusic", "added": 1793023638171, "rel": "Dreams (Reprise) I Judah Earl & BODA #music #cinematic #orchestralmusic.mp3", "fav": false, "tags": []}, {"title": "Dé Soltuné Montepré", "ext": ".mp3", "dur": 1280.9, "bpm": 136, "en": 57, "level": "Trung bình", "moods": ["Nhanh"], "i": 50, "n": "de soltune montepre", "added": 1793023629918, "rel": "Dé Soltuné Montepré-.mp3", "fav": false, "tags": []}, {"title": "Edison Lighthouse - Love Grows (Where My Rosemary Goes)", "ext": ".mp3", "dur": 168.6, "bpm": 107.7, "en": 64, "level": "Trung bình", "moods": ["Vừa", "Sáng"], "i": 51, "n": "edison lighthouse - love grows (where my rosemary goes)", "added": 1793023608206, "rel": "Edison Lighthouse - Love Grows (Where My Rosemary Goes) (Official HD Video).mp3", "fav": false, "tags": []}, {"title": "Ellie Goulding - Love Me Like You Do", "ext": ".mp3", "dur": 239.7, "bpm": 95.7, "en": 65, "level": "Trung bình", "moods": ["Chậm"], "i": 52, "n": "ellie goulding - love me like you do", "added": 1793023609468, "rel": "Ellie Goulding - Love Me Like You Do (Lyrics).mp3", "fav": false, "tags": []}, {"title": "EM ĐỒNG Ý (I DO) - ĐỨC PHÚC x 911 x KHẮC HƯNG - OFFICIAL MUSIC VIDEO - VALENTINE 2023", "ext": ".mp3", "dur": 221.3, "bpm": 95.7, "en": 76, "level": "Cao", "moods": ["Chậm"], "i": 53, "n": "em đong y (i do) - đuc phuc x 911 x khac hung - official music video - valentine 2023", "added": 1793023616520, "rel": "EM ĐỒNG Ý (I DO) - ĐỨC PHÚC x 911 x KHẮC HƯNG - OFFICIAL MUSIC VIDEO - VALENTINE 2023.mp3", "fav": false, "tags": []}, {"title": "Endless Flames", "ext": ".mp3", "dur": 239.1, "bpm": 129.2, "en": 40, "level": "Trung bình", "moods": ["Vừa", "Sáng"], "i": 54, "n": "endless flames", "added": 1793023638207, "rel": "Endless Flames.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Ethereal", "ext": ".mp3", "dur": 168.1, "bpm": 136, "en": 46, "level": "Trung bình", "moods": ["Nhanh"], "i": 55, "n": "ethereal", "added": 1793023630042, "rel": "Ethereal.mp3", "fav": false, "tags": []}, {"title": "Everything is romantic (Reimagined) - Alina Kay, Ozz Gold", "ext": ".mp3", "dur": 122.5, "bpm": 152, "en": 68, "level": "Trung bình", "moods": ["Nhanh"], "i": 56, "n": "everything is romantic (reimagined) - alina kay, ozz gold", "added": 1793023621741, "rel": "Everything is romantic (Reimagined) - Alina Kay, Ozz Gold.mp3", "fav": false, "tags": []}, {"title": "Experience - Ludovico Einaudi & Daniel Hope", "ext": ".mp3", "dur": 312.8, "bpm": 92.3, "en": 16, "level": "Thấp", "moods": ["Thư giãn", "Chậm", "Trầm"], "i": 57, "n": "experience - ludovico einaudi & daniel hope", "added": 1793023617229, "rel": "Experience - Ludovico Einaudi & Daniel Hope - YouTube.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Fairy Dreams", "ext": ".mp3", "dur": 148.9, "bpm": 117.5, "en": 16, "level": "Thấp", "moods": ["Thư giãn", "Vừa"], "i": 58, "n": "fairy dreams", "added": 1793023642151, "rel": "Fairy Dreams - YouTube.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Fall Into Forever", "ext": ".mp3", "dur": 196.7, "bpm": 103.4, "en": 68, "level": "Trung bình", "moods": ["Vừa", "Sáng"], "i": 59, "n": "fall into forever", "added": 1793023634633, "rel": "Fall Into Forever - YouTube.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Feel You Next To Me", "ext": ".mp3", "dur": 237.5, "bpm": 143.6, "en": 39, "level": "Trung bình", "moods": ["Nhanh", "Sáng"], "i": 60, "n": "feel you next to me", "added": 1793023617281, "rel": "Feel You Next To Me.mp3", "fav": false, "tags": []}, {"title": "feinsmecker - Come Again", "ext": ".wav", "dur": 45.3, "bpm": 123, "en": 90, "level": "Cao", "moods": ["Sôi động", "Vừa", "Sáng"], "i": 61, "n": "feinsmecker - come again", "added": 1793023628206, "rel": "feinsmecker - Come Again.wav", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Fight and Fall", "ext": ".mp3", "dur": 287.1, "bpm": 143.6, "en": 64, "level": "Trung bình", "moods": ["Nhanh"], "i": 62, "n": "fight and fall", "added": 1793023617318, "rel": "Fight and Fall - YouTube.mp3", "fav": false, "tags": []}, {"title": "Fireflies", "ext": ".mp3", "dur": 326.3, "bpm": 103.4, "en": 71, "level": "Cao", "moods": ["Vừa"], "i": 63, "n": "fireflies", "added": 1793023626068, "rel": "Fireflies - YouTube.mp3", "fav": false, "tags": []}, {"title": "First Love  Utada Hikaru (English Cover by Judy Goodvibes)", "ext": ".mp3", "dur": 241.2, "bpm": 89.1, "en": 64, "level": "Trung bình", "moods": ["Chậm", "Sáng"], "i": 64, "n": "first love  utada hikaru (english cover by judy goodvibes)", "added": 1793023620949, "rel": "First Love  Utada Hikaru (English Cover by Judy Goodvibes).mp3", "fav": false, "tags": []}, {"title": "Fly Me to the Moon", "ext": ".mp3", "dur": 218.2, "bpm": 129.2, "en": 68, "level": "Trung bình", "moods": ["Vừa"], "i": 65, "n": "fly me to the moon", "added": 1793023620344, "rel": "Fly Me to the Moon-.mp3", "fav": false, "tags": []}, {"title": "Fly with me", "ext": ".mp3", "dur": 183, "bpm": 112.3, "en": 67, "level": "Trung bình", "moods": ["Vừa", "Sáng"], "i": 66, "n": "fly with me", "added": 1793023606036, "rel": "Fly with me.mp3", "fav": false, "tags": []}, {"title": "for-the-rest-of-my-life-135578", "ext": ".wav", "dur": 201.1, "bpm": 112.3, "en": 62, "level": "Trung bình", "moods": ["Vừa", "Sáng"], "i": 67, "n": "for-the-rest-of-my-life-135578", "added": 1793023606112, "rel": "for-the-rest-of-my-life-135578.wav", "fav": false, "tags": []}, {"title": "Forever Was Made for Me and You", "ext": ".mp3", "dur": 283.6, "bpm": 152, "en": 91, "level": "Cao", "moods": ["Sôi động", "Nhanh", "Sáng"], "i": 68, "n": "forever was made for me and you", "added": 1793023606428, "rel": "Forever Was Made for Me and You - YouTube.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Frankie Valli - Can't Take My Eyes Off You", "ext": ".mp3", "dur": 204.2, "bpm": 123, "en": 57, "level": "Trung bình", "moods": ["Vừa", "Sáng"], "i": 69, "n": "frankie valli - can't take my eyes off you", "added": 1793023641730, "rel": "Frankie Valli - Can't Take My Eyes Off You (Lyrics).mp3", "fav": false, "tags": []}, {"title": "From This Moment, It's Us by RebelMoon - Suno", "ext": ".mp3", "dur": 327.9, "bpm": 152, "en": 49, "level": "Trung bình", "moods": ["Nhanh", "Sáng"], "i": 70, "n": "from this moment, it's us by rebelmoon - suno", "added": 1793023606583, "rel": "From This Moment, It's Us by RebelMoon - Suno.mp3", "fav": false, "tags": []}, {"title": "fujiro - worth the wait", "ext": ".mp3", "dur": 242.5, "bpm": 95.7, "en": 65, "level": "Trung bình", "moods": ["Chậm", "Sáng"], "i": 71, "n": "fujiro - worth the wait", "added": 1793023614403, "rel": "fujiro - worth the wait (official lyric video) - YouTube.mp3", "fav": false, "tags": []}, {"title": "Galaxies", "ext": ".mp3", "dur": 188.2, "bpm": 129.2, "en": 22, "level": "Thấp", "moods": ["Vừa", "Trầm"], "i": 72, "n": "galaxies", "added": 1793023609551, "rel": "Galaxies.mp3", "fav": false, "tags": []}, {"title": "Gibran Alcocer live  Elbphilharmonie Ambient Piano-Set", "ext": ".mp3", "dur": 1207.6, "bpm": 172.3, "en": 0, "level": "Thấp", "moods": ["Nhanh"], "i": 73, "n": "gibran alcocer live  elbphilharmonie ambient piano-set", "added": 1793023642361, "rel": "Gibran Alcocer live  Elbphilharmonie Ambient Piano-Set  - YouTube.mp3", "fav": false, "tags": []}, {"title": "Golden brown x Love Story (Epic Orchestral Version)", "ext": ".mp3", "dur": 181.1, "bpm": 143.6, "en": 67, "level": "Trung bình", "moods": ["Nhanh"], "i": 74, "n": "golden brown x love story (epic orchestral version)", "added": 1793023621775, "rel": "Golden brown x Love Story (Epic Orchestral Version).mp3", "fav": false, "tags": []}, {"title": "Golden Hour - JVKE - Cinematic Violin Cover", "ext": ".mp3", "dur": 153, "bpm": 129.2, "en": 62, "level": "Trung bình", "moods": ["Vừa"], "i": 75, "n": "golden hour - jvke - cinematic violin cover", "added": 1793023611833, "rel": "Golden Hour - JVKE - Cinematic Violin Cover.mp3", "fav": false, "tags": []}, {"title": "Goodness Of God (Wedding Version) - Bethel Music - Violin Cover", "ext": ".mp3", "dur": 211.6, "bpm": 117.5, "en": 1, "level": "Thấp", "moods": ["Thư giãn", "Vừa", "Trầm"], "i": 76, "n": "goodness of god (wedding version) - bethel music - violin cover", "added": 1793023614452, "rel": "Goodness Of God (Wedding Version) - Bethel Music - Violin Cover - YouTube.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Graceful Pieces in Mozart & Haydn Style  Strings for Morning Coffee", "ext": ".mp3", "dur": 8101.5, "bpm": 112.3, "en": 48, "level": "Trung bình", "moods": ["Vừa", "Trầm"], "i": 77, "n": "graceful pieces in mozart & haydn style  strings for morning coffee", "added": 1793023630113, "rel": "Graceful Pieces in Mozart & Haydn Style  Strings for Morning Coffee.mp3", "fav": false, "tags": []}, {"title": "Grow as We Go", "ext": ".mp3", "dur": 249.5, "bpm": 112.3, "en": 46, "level": "Trung bình", "moods": ["Vừa", "Sáng"], "i": 78, "n": "grow as we go", "added": 1793023626156, "rel": "Grow as We Go - YouTube.mp3", "fav": false, "tags": []}, {"title": "Hans Zimmer - Interstellar - Imperial Orchestra", "ext": ".mp3", "dur": 403.5, "bpm": 123, "en": 0, "level": "Thấp", "moods": ["Vừa", "Trầm"], "i": 79, "n": "hans zimmer - interstellar - imperial orchestra", "added": 1793023636625, "rel": "Hans Zimmer - Interstellar - Imperial Orchestra - YouTube.mp3", "fav": false, "tags": []}, {"title": "Harryan Yoonsoan - Way Back Into Love", "ext": ".mp3", "dur": 277.6, "bpm": 103.4, "en": 64, "level": "Trung bình", "moods": ["Vừa"], "i": 80, "n": "harryan yoonsoan - way back into love", "added": 1793023617365, "rel": "Harryan Yoonsoan - Way Back Into Love (Lyrics) - YouTube.mp3", "fav": false, "tags": []}, {"title": "Heartbeat", "ext": ".mp3", "dur": 283.3, "bpm": 136, "en": 95, "level": "Cao", "moods": ["Sôi động", "Nhanh"], "i": 81, "n": "heartbeat", "added": 1793023614980, "rel": "Heartbeat.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Hold on Me (feat. Mammals)", "ext": ".mp3", "dur": 193.1, "bpm": 129.2, "en": 100, "level": "Cao", "moods": ["Sôi động", "Vừa", "Sáng"], "i": 82, "n": "hold on me (feat. mammals)", "added": 1793023617597, "rel": "Hold on Me (feat. Mammals).mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Hooked on you", "ext": ".mp3", "dur": 143.6, "bpm": 117.5, "en": 54, "level": "Trung bình", "moods": ["Vừa", "Sáng"], "i": 83, "n": "hooked on you", "added": 1793023606663, "rel": "Hooked on you.mp3", "fav": false, "tags": []}, {"title": "Hope", "ext": ".mp3", "dur": 106.9, "bpm": 112.3, "en": 66, "level": "Trung bình", "moods": ["Vừa"], "i": 84, "n": "hope", "added": 1793023606702, "rel": "Hope.mp3", "fav": false, "tags": []}, {"title": "Hoping For An Answer", "ext": ".mp3", "dur": 157.2, "bpm": 143.6, "en": 60, "level": "Trung bình", "moods": ["Nhanh", "Trầm"], "i": 85, "n": "hoping for an answer", "added": 1793023608884, "rel": "Hoping For An Answer.mp3", "fav": false, "tags": []}, {"title": "I Still Haven't Found What I'm Looking For (Trailer Version) - Tommee Profitt x FORES", "ext": ".mp3", "dur": 188.5, "bpm": 136, "en": 32, "level": "Thấp", "moods": ["Nhanh"], "i": 86, "n": "i still haven't found what i'm looking for (trailer version) - tommee profitt x fores", "added": 1793023617634, "rel": "I Still Haven't Found What I'm Looking For (Trailer Version) - Tommee Profitt x FORES.mp3", "fav": false, "tags": []}, {"title": "Ikoliks - New Day", "ext": ".wav", "dur": 157.4, "bpm": 123, "en": 100, "level": "Cao", "moods": ["Sôi động", "Vừa"], "i": 87, "n": "ikoliks - new day", "added": 1793023628374, "rel": "Ikoliks - New Day.wav", "fav": false, "tags": [], "cat": "Event"}, {"title": "In The Event", "ext": ".mp3", "dur": 106.6, "bpm": 143.6, "en": 99, "level": "Cao", "moods": ["Sôi động", "Nhanh", "Sáng"], "i": 88, "n": "in the event", "added": 1793023604271, "rel": "In The Event.mp3", "fav": false, "tags": [], "cat": "Event"}, {"title": "Infinity Inside Wanderer", "ext": ".mp3", "dur": 170.3, "bpm": 129.2, "en": 75, "level": "Cao", "moods": ["Sôi động", "Vừa"], "i": 89, "n": "infinity inside wanderer", "added": 1793023627164, "rel": "Infinity Inside Wanderer.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Inspiring Wedding Adventure Cinematic", "ext": ".mp3", "dur": 129.6, "bpm": 123, "en": 87, "level": "Cao", "moods": ["Sôi động", "Vừa"], "i": 90, "n": "inspiring wedding adventure cinematic", "added": 1793023610563, "rel": "Inspiring Wedding Adventure Cinematic.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Into The Unknown", "ext": ".mp3", "dur": 193.3, "bpm": 117.5, "en": 52, "level": "Trung bình", "moods": ["Vừa"], "i": 91, "n": "into the unknown", "added": 1793023609592, "rel": "Into The Unknown.mp3", "fav": false, "tags": []}, {"title": "Invader 303 - The Long Voyage (SANABI OST)", "ext": ".mp3", "dur": 310.3, "bpm": 129.2, "en": 100, "level": "Cao", "moods": ["Sôi động", "Vừa", "Sáng"], "i": 92, "n": "invader 303 - the long voyage (sanabi ost)", "added": 1793023636665, "rel": "Invader 303 - The Long Voyage (SANABI OST) - YouTube.mp3", "fav": false, "tags": [], "cat": "None"}, {"title": "IRIS (Cinematic Cover) - Tommee Profitt & Ruelle", "ext": ".mp3", "dur": 247.6, "bpm": 123, "en": 59, "level": "Trung bình", "moods": ["Vừa", "Sáng"], "i": 93, "n": "iris (cinematic cover) - tommee profitt & ruelle", "added": 1793023614490, "rel": "IRIS (Cinematic Cover) - Tommee Profitt & Ruelle - YouTube.mp3", "fav": false, "tags": []}, {"title": "IS THIS WHAT LOVE MEANS - by End Of Silence", "ext": ".mp3", "dur": 586, "bpm": 123, "en": 22, "level": "Thấp", "moods": ["Vừa"], "i": 94, "n": "is this what love means - by end of silence", "added": 1793023642796, "rel": "IS THIS WHAT LOVE MEANS - by End Of Silence - YouTube.mp3", "fav": false, "tags": []}, {"title": "It's Just The Beginning (feat. Roary)", "ext": ".mp3", "dur": 212.7, "bpm": 143.6, "en": 58, "level": "Trung bình", "moods": ["Nhanh"], "i": 95, "n": "it's just the beginning (feat. roary)", "added": 1793023615028, "rel": "It's Just The Beginning (feat. Roary).mp3", "fav": false, "tags": []}, {"title": "Jake Miller - Lucky Me (The proposal)", "ext": ".mp3", "dur": 168.4, "bpm": 152, "en": 54, "level": "Trung bình", "moods": ["Nhanh"], "i": 96, "n": "jake miller - lucky me (the proposal)", "added": 1793023634751, "rel": "Jake Miller - Lucky Me (The proposal) - YouTube.mp3", "fav": false, "tags": []}, {"title": "Jo Blankenburg - Villanelle", "ext": ".mp3", "dur": 237.2, "bpm": 143.6, "en": 28, "level": "Thấp", "moods": ["Nhanh", "Trầm"], "i": 97, "n": "jo blankenburg - villanelle", "added": 1793023633540, "rel": "Jo Blankenburg - Villanelle.mp3", "fav": false, "tags": []}, {"title": "John Michael Howell, JVKE, & ZVC - A Thousand Years", "ext": ".mp3", "dur": 180.4, "bpm": 112.3, "en": 69, "level": "Trung bình", "moods": ["Vừa", "Sáng"], "i": 98, "n": "john michael howell, jvke, & zvc - a thousand years", "added": 1793023622077, "rel": "John Michael Howell, JVKE, & ZVC - A Thousand Years (official lyric video) - YouTube.mp3", "fav": false, "tags": []}, {"title": "Joseph William Morgan - -Enchanted (Taylor Swift Cover)", "ext": ".mp3", "dur": 236, "bpm": 123, "en": 54, "level": "Trung bình", "moods": ["Vừa", "Trầm"], "i": 99, "n": "joseph william morgan - -enchanted (taylor swift cover)", "added": 1793023609634, "rel": "Joseph William Morgan - -Enchanted (Taylor Swift Cover)- (Official Audio).mp3", "fav": false, "tags": []}, {"title": "JVKE - golden hour", "ext": ".mp3", "dur": 231.8, "bpm": 95.7, "en": 97, "level": "Cao", "moods": ["Chậm"], "i": 100, "n": "jvke - golden hour", "added": 1793023611944, "rel": "JVKE - golden hour (official music video).mp3", "fav": false, "tags": []}, {"title": "JVKE - her", "ext": ".mp3", "dur": 171.9, "bpm": 143.6, "en": 100, "level": "Cao", "moods": ["Sôi động", "Nhanh"], "i": 101, "n": "jvke - her", "added": 1793023622120, "rel": "JVKE - her (official lyric video).mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Kendrick Lamar - Not Like Us INSTRUMENTAL OFFICIAL (prod. DJ Mustard) -Drake Diss", "ext": ".mp3", "dur": 272.4, "bpm": 99.4, "en": 100, "level": "Cao", "moods": ["Chậm"], "i": 102, "n": "kendrick lamar - not like us instrumental official (prod. dj mustard) -drake diss", "added": 1793023636707, "rel": "Kendrick Lamar - Not Like Us INSTRUMENTAL OFFICIAL (prod. DJ Mustard) -Drake Diss- - YouTube.mp3", "fav": false, "tags": []}, {"title": "Khalid - Heatstroke", "ext": ".mp3", "dur": 236.4, "bpm": 129.2, "en": 99, "level": "Cao", "moods": ["Sôi động", "Vừa"], "i": 103, "n": "khalid - heatstroke", "added": 1793023614522, "rel": "Khalid - Heatstroke (Official Music Video).mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Kodaline - The One", "ext": ".mp3", "dur": 241.7, "bpm": 103.4, "en": 40, "level": "Trung bình", "moods": ["Vừa", "Sáng"], "i": 104, "n": "kodaline - the one", "added": 1793023641871, "rel": "Kodaline - The One (Official Music Video) - YouTube.mp3", "fav": false, "tags": []}, {"title": "Kollen - Forza", "ext": ".mp3", "dur": 329.1, "bpm": 136, "en": 26, "level": "Thấp", "moods": ["Nhanh"], "i": 105, "n": "kollen - forza", "added": 1793023626298, "rel": "Kollen - Forza - YouTube.mp3", "fav": false, "tags": []}, {"title": "L-O-V-E", "ext": ".mp3", "dur": 223.3, "bpm": 117.5, "en": 73, "level": "Cao", "moods": ["Vừa"], "i": 106, "n": "l-o-v-e", "added": 1793023614561, "rel": "L-O-V-E - YouTube.mp3", "fav": false, "tags": []}, {"title": "La Bohéme (Bonus Track - Not Included In Film)", "ext": ".mp3", "dur": 87.9, "bpm": 117.5, "en": 45, "level": "Trung bình", "moods": ["Vừa"], "i": 107, "n": "la boheme (bonus track - not included in film)", "added": 1793023615046, "rel": "La Bohéme (Bonus Track - Not Included In Film).mp3", "fav": false, "tags": []}, {"title": "Lady Gaga, Bruno Mars - Die With A Smile", "ext": ".mp3", "dur": 252.4, "bpm": 107.7, "en": 68, "level": "Trung bình", "moods": ["Vừa", "Sáng"], "i": 108, "n": "lady gaga, bruno mars - die with a smile", "added": 1793023641946, "rel": "Lady Gaga, Bruno Mars - Die With A Smile (Official Music Video) - YouTube.mp3", "fav": false, "tags": []}, {"title": "Lana Del Rey - Say Yes To Heaven", "ext": ".mp3", "dur": 209.3, "bpm": 103.4, "en": 77, "level": "Cao", "moods": ["Vừa"], "i": 109, "n": "lana del rey - say yes to heaven", "added": 1793023642173, "rel": "Lana Del Rey - Say Yes To Heaven (Official Audio) - YouTube.mp3", "fav": false, "tags": []}, {"title": "Lana Del Rey - Say Yes To Heaven", "ext": ".mp3", "dur": 209.3, "bpm": 99.4, "en": 77, "level": "Cao", "moods": ["Chậm"], "i": 110, "n": "lana del rey - say yes to heaven", "added": 1793023621804, "rel": "Lana Del Rey - Say Yes To Heaven (Official Audio).mp3", "fav": false, "tags": []}, {"title": "Lana Del Rey - Young and Beautiful", "ext": ".mp3", "dur": 238.7, "bpm": 117.5, "en": 72, "level": "Cao", "moods": ["Vừa"], "i": 111, "n": "lana del rey - young and beautiful", "added": 1793023609678, "rel": "Lana Del Rey - Young and Beautiful.mp3", "fav": false, "tags": []}, {"title": "Like a Bird", "ext": ".mp3", "dur": 243.8, "bpm": 136, "en": 50, "level": "Trung bình", "moods": ["Nhanh"], "i": 112, "n": "like a bird", "added": 1793023620380, "rel": "Like a Bird.mp3", "fav": false, "tags": []}, {"title": "Lover - Taylor Swift - Wedding Violin Performance", "ext": ".mp3", "dur": 256.9, "bpm": 99.4, "en": 45, "level": "Trung bình", "moods": ["Chậm"], "i": 113, "n": "lover - taylor swift - wedding violin performance", "added": 1793023617672, "rel": "Lover - Taylor Swift - Wedding Violin Performance - YouTube.mp3", "fav": false, "tags": []}, {"title": "Lux-Inspira - The Miracles", "ext": ".wav", "dur": 344.4, "bpm": 99.4, "en": 51, "level": "Trung bình", "moods": ["Chậm"], "i": 114, "n": "lux-inspira - the miracles", "added": 1793023606704, "rel": "Lux-Inspira - The Miracles.wav", "fav": false, "tags": []}, {"title": "Maddie Moon  Dancing On The Water  Lyrics", "ext": ".mp3", "dur": 162.1, "bpm": 107.7, "en": 87, "level": "Cao", "moods": ["Vừa", "Sáng"], "i": 115, "n": "maddie moon  dancing on the water  lyrics", "added": 1793023617700, "rel": "Maddie Moon  Dancing On The Water  Lyrics - YouTube.mp3", "fav": false, "tags": []}, {"title": "Maddie Moon - Spend My Days", "ext": ".mp3", "dur": 228.1, "bpm": 117.5, "en": 66, "level": "Trung bình", "moods": ["Vừa", "Sáng"], "i": 116, "n": "maddie moon - spend my days", "added": 1793023617735, "rel": "Maddie Moon - Spend My Days (Official Music Video) - YouTube.mp3", "fav": false, "tags": []}, {"title": "Magnificent Life", "ext": ".mp3", "dur": 219.5, "bpm": 136, "en": 21, "level": "Thấp", "moods": ["Nhanh"], "i": 117, "n": "magnificent life", "added": 1793023614609, "rel": "Magnificent Life - YouTube.mp3", "fav": false, "tags": []}, {"title": "Main", "ext": ".mp3", "dur": 102.5, "bpm": 112.3, "en": 71, "level": "Cao", "moods": ["Vừa"], "i": 118, "n": "main", "added": 1793023603827, "rel": "Main.mp3", "fav": false, "tags": []}, {"title": "Mark Ronson, RAYE - Suzanne", "ext": ".mp3", "dur": 236.6, "bpm": 99.4, "en": 100, "level": "Cao", "moods": ["Chậm", "Sáng"], "i": 119, "n": "mark ronson, raye - suzanne", "added": 1793023633812, "rel": "Mark Ronson, RAYE - Suzanne (Official Video).mp3", "fav": false, "tags": []}, {"title": "Maroon 5 - Sugar", "ext": ".mp3", "dur": 235.1, "bpm": 117.5, "en": 64, "level": "Trung bình", "moods": ["Vừa", "Sáng"], "i": 120, "n": "maroon 5 - sugar", "added": 1793023634796, "rel": "Maroon 5 - Sugar (Lyrics).mp3", "fav": false, "tags": []}, {"title": "Middle Of The Night", "ext": ".mp3", "dur": 180.8, "bpm": 92.3, "en": 71, "level": "Cao", "moods": ["Chậm", "Sáng"], "i": 121, "n": "middle of the night", "added": 1793023620413, "rel": "Middle Of The Night.mp3", "fav": false, "tags": []}, {"title": "Minucciano", "ext": ".mp3", "dur": 226.8, "bpm": 123, "en": 29, "level": "Thấp", "moods": ["Vừa"], "i": 122, "n": "minucciano", "added": 1793023607794, "rel": "Minucciano.mp3", "fav": false, "tags": []}, {"title": "Momentum Lines", "ext": ".mp3", "dur": 193.9, "bpm": 129.2, "en": 92, "level": "Cao", "moods": ["Sôi động", "Vừa", "Sáng"], "i": 123, "n": "momentum lines", "added": 1793023645191, "rel": "Momentum Lines - YouTube.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Motivation & Power - Epic Orchestral Immersion", "ext": ".mp3", "dur": 1248.3, "bpm": 136, "en": 70, "level": "Cao", "moods": ["Sôi động", "Nhanh", "Trầm"], "i": 124, "n": "motivation & power - epic orchestral immersion", "added": 1793023605300, "rel": "Motivation & Power - Epic Orchestral Immersion.mp3", "fav": false, "tags": []}, {"title": "Hit Back", "ext": ".mp3", "dur": 144.8, "bpm": 123, "en": 97, "level": "Cao", "moods": ["Sôi động", "Vừa", "Sáng"], "i": 125, "n": "hit back", "added": 1793023632865, "rel": "mở màn từ 0-17 intro.mp3", "fav": false, "tags": [], "cat": "Event"}, {"title": "music 1", "ext": ".mp3", "dur": 68, "bpm": 117.5, "en": 47, "level": "Trung bình", "moods": ["Vừa", "Sáng"], "i": 126, "n": "music 1", "added": 1793023610583, "rel": "music 1.mp3", "fav": false, "tags": []}, {"title": "Muted - Zoom Out", "ext": ".wav", "dur": 300.1, "bpm": 136, "en": 54, "level": "Trung bình", "moods": ["Nhanh", "Trầm"], "i": 127, "n": "muted - zoom out", "added": 1793023635155, "rel": "Muted - Zoom Out.wav", "fav": false, "tags": []}, {"title": "Một Ngày Hay Trăm Năm", "ext": ".mp3", "dur": 290.6, "bpm": 172.3, "en": 48, "level": "Trung bình", "moods": ["Nhanh"], "i": 128, "n": "mot ngay hay tram nam", "added": 1793023617777, "rel": "Một Ngày Hay Trăm Năm.mp3", "fav": false, "tags": []}, {"title": "Nancy Leticia - Boundless", "ext": ".wav", "dur": 160.2, "bpm": 161.5, "en": 60, "level": "Trung bình", "moods": ["Nhanh", "Trầm"], "i": 129, "n": "nancy leticia - boundless", "added": 1793023617795, "rel": "Nancy Leticia - Boundless.wav", "fav": false, "tags": []}, {"title": "New West - Those Eyes (Chapter 1)", "ext": ".mp3", "dur": 221.6, "bpm": 123, "en": 63, "level": "Trung bình", "moods": ["Vừa"], "i": 130, "n": "new west - those eyes (chapter 1)", "added": 1793023636372, "rel": "New West - Those Eyes (Chapter 1) - YouTube.mp3", "fav": false, "tags": []}, {"title": "Non-Stop Wedding Party Mix", "ext": ".mp3", "dur": 5012.6, "bpm": 143.6, "en": 87, "level": "Cao", "moods": ["Sôi động", "Nhanh", "Sáng"], "i": 131, "n": "non-stop wedding party mix", "added": 1793023643271, "rel": "Non-Stop Wedding Party Mix.mp3", "fav": false, "tags": []}, {"title": "now-or-never-134480", "ext": ".aac", "dur": 168.9, "bpm": 123, "en": 62, "level": "Trung bình", "moods": ["Vừa"], "i": 132, "n": "now-or-never-134480", "added": 1793023605529, "rel": "now-or-never-134480.aac", "fav": false, "tags": []}, {"title": "Obituary", "ext": ".mp3", "dur": 210.1, "bpm": 161.5, "en": 3, "level": "Thấp", "moods": ["Nhanh"], "i": 133, "n": "obituary", "added": 1793023632065, "rel": "Obituary.mp3", "fav": false, "tags": []}, {"title": "Obvious (Alt Version)", "ext": ".mp3", "dur": 350.4, "bpm": 136, "en": 53, "level": "Trung bình", "moods": ["Nhanh", "Trầm"], "i": 134, "n": "obvious (alt version)", "added": 1793023636415, "rel": "Obvious (Alt Version).mp3", "fav": false, "tags": []}, {"title": "Obvious (Slowed Instrumental)", "ext": ".mp3", "dur": 362.9, "bpm": 112.3, "en": 28, "level": "Thấp", "moods": ["Thư giãn", "Vừa", "Trầm"], "i": 135, "n": "obvious (slowed instrumental)", "added": 1793023640591, "rel": "Obvious (Slowed Instrumental).mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Obviously", "ext": ".mp3", "dur": 136.3, "bpm": 117.5, "en": 63, "level": "Trung bình", "moods": ["Vừa"], "i": 136, "n": "obviously", "added": 1793023608980, "rel": "Obviously.mp3", "fav": false, "tags": []}, {"title": "On My Mind", "ext": ".mp3", "dur": 215.3, "bpm": 136, "en": 15, "level": "Thấp", "moods": ["Nhanh"], "i": 137, "n": "on my mind", "added": 1793023609707, "rel": "On My Mind.mp3", "fav": false, "tags": []}, {"title": "Onda Norte - Paradise", "ext": ".wav", "dur": 153.7, "bpm": 117.5, "en": 100, "level": "Cao", "moods": ["Vừa", "Sáng"], "i": 138, "n": "onda norte - paradise", "added": 1793023603877, "rel": "Onda Norte - Paradise.wav", "fav": false, "tags": []}, {"title": "Opening - Orchestral Fantasy Epic Intro  Epic Music", "ext": ".mp3", "dur": 66.2, "bpm": 136, "en": 82, "level": "Cao", "moods": ["Sôi động", "Nhanh"], "i": 139, "n": "opening - orchestral fantasy epic intro  epic music", "added": 1793023605572, "rel": "Opening - Orchestral Fantasy Epic Intro  Epic Music.mp3", "fav": false, "tags": [], "cat": "Event"}, {"title": "Over October - Intertwine ft. The Ridleys", "ext": ".mp3", "dur": 373.7, "bpm": 136, "en": 84, "level": "Cao", "moods": ["Sôi động", "Nhanh"], "i": 140, "n": "over october - intertwine ft. the ridleys", "added": 1793023614672, "rel": "Over October - Intertwine (Official Music Video) ft. The Ridleys - YouTube.mp3", "fav": false, "tags": []}, {"title": "Phil Wickham - It's Always Been You", "ext": ".mp3", "dur": 252.7, "bpm": 143.6, "en": 78, "level": "Cao", "moods": ["Sôi động", "Nhanh"], "i": 141, "n": "phil wickham - it's always been you", "added": 1793023618865, "rel": "Phil Wickham - It's Always Been You (Official Music Video) - YouTube.mp3", "fav": false, "tags": []}, {"title": "Piano Intro", "ext": ".mp3", "dur": 77.6, "bpm": 152, "en": 43, "level": "Trung bình", "moods": ["Nhanh", "Trầm"], "i": 142, "n": "piano intro", "added": 1793023609012, "rel": "Piano Intro.mp3", "fav": false, "tags": []}, {"title": "PianoStrings Intro", "ext": ".mp3", "dur": 137, "bpm": 161.5, "en": 36, "level": "Trung bình", "moods": ["Nhanh", "Sáng"], "i": 143, "n": "pianostrings intro", "added": 1793023607856, "rel": "PianoStrings Intro.mp3", "fav": false, "tags": []}, {"title": "Pirates Of the Sky", "ext": ".mp3", "dur": 183.8, "bpm": 123, "en": 42, "level": "Trung bình", "moods": ["Vừa", "Sáng"], "i": 144, "n": "pirates of the sky", "added": 1793023607956, "rel": "Pirates Of the Sky.mp3", "fav": false, "tags": []}, {"title": "Power-Haus - Christian Reindl & Lloren - This Is Where It Begins", "ext": ".mp3", "dur": 183, "bpm": 152, "en": 88, "level": "Cao", "moods": ["Sôi động", "Nhanh", "Sáng"], "i": 145, "n": "power-haus - christian reindl & lloren - this is where it begins", "added": 1793023609829, "rel": "Power-Haus - Christian Reindl & Lloren - This Is Where It Begins.mp3", "fav": false, "tags": []}, {"title": "Power-Haus - Christian Reindl & Sebastian Pecznik - Mare", "ext": ".mp3", "dur": 159.1, "bpm": 112.3, "en": 53, "level": "Trung bình", "moods": ["Vừa"], "i": 146, "n": "power-haus - christian reindl & sebastian pecznik - mare", "added": 1793023613604, "rel": "Power-Haus - Christian Reindl & Sebastian Pecznik - Mare.mp3", "fav": false, "tags": []}, {"title": "Power-Haus - Christian Reindl & Sebastian Pecznik - Tide", "ext": ".mp3", "dur": 157, "bpm": 152, "en": 64, "level": "Trung bình", "moods": ["Nhanh"], "i": 147, "n": "power-haus - christian reindl & sebastian pecznik - tide", "added": 1793023624438, "rel": "Power-Haus - Christian Reindl & Sebastian Pecznik - Tide.mp3", "fav": false, "tags": []}, {"title": "Power-Haus - Christian Reindl x Eivør - LOKI (feat. Eivør)", "ext": ".mp3", "dur": 149.2, "bpm": 123, "en": 62, "level": "Trung bình", "moods": ["Vừa"], "i": 148, "n": "power-haus - christian reindl x eivør - loki (feat. eivør)", "added": 1793023609860, "rel": "Power-Haus - Christian Reindl x Eivør - LOKI (feat. Eivør).mp3", "fav": false, "tags": []}, {"title": "Power-Haus - DITONE - Everglow [Elevated Mix]", "ext": ".mp3", "dur": 148, "bpm": 129.2, "en": 57, "level": "Trung bình", "moods": ["Vừa"], "i": 149, "n": "power-haus - ditone - everglow [elevated mix]", "added": 1793023621233, "rel": "Power-Haus - DITONE - Everglow [Elevated Mix].mp3", "fav": false, "tags": []}, {"title": "Power-Haus - Jonathon Deering & Ros Stephen - Cassiopeia", "ext": ".mp3", "dur": 188.5, "bpm": 136, "en": 47, "level": "Trung bình", "moods": ["Nhanh"], "i": 150, "n": "power-haus - jonathon deering & ros stephen - cassiopeia", "added": 1793023624464, "rel": "Power-Haus - Jonathon Deering & Ros Stephen - Cassiopeia.mp3", "fav": false, "tags": []}, {"title": "Power-Haus - Jonathon Deering & Ros Stephen - Orior", "ext": ".mp3", "dur": 167.1, "bpm": 107.7, "en": 33, "level": "Thấp", "moods": ["Thư giãn", "Vừa"], "i": 151, "n": "power-haus - jonathon deering & ros stephen - orior", "added": 1793023627216, "rel": "Power-Haus - Jonathon Deering & Ros Stephen - Orior.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Power-Haus - Jonathon Deering & Ros Stephen - Somnus", "ext": ".mp3", "dur": 202.1, "bpm": 143.6, "en": 34, "level": "Thấp", "moods": ["Nhanh"], "i": 152, "n": "power-haus - jonathon deering & ros stephen - somnus", "added": 1793023618901, "rel": "Power-Haus - Jonathon Deering & Ros Stephen - Somnus - YouTube.mp3", "fav": false, "tags": []}, {"title": "Power-Haus - TOM-E - Within Water", "ext": ".mp3", "dur": 151.6, "bpm": 112.3, "en": 60, "level": "Trung bình", "moods": ["Vừa"], "i": 153, "n": "power-haus - tom-e - within water", "added": 1793023620469, "rel": "Power-Haus - TOM-E - Within Water.mp3", "fav": false, "tags": []}, {"title": "Promises Love Has Written - An Original Wedding Vows Duet", "ext": ".mp3", "dur": 360.5, "bpm": 136, "en": 58, "level": "Trung bình", "moods": ["Nhanh", "Sáng"], "i": 154, "n": "promises love has written - an original wedding vows duet", "added": 1793023613644, "rel": "Promises Love Has Written - An Original Wedding Vows Duet.mp3", "fav": false, "tags": []}, {"title": "RAYE - WHERE IS MY HUSBAND!", "ext": ".mp3", "dur": 198, "bpm": 117.5, "en": 82, "level": "Cao", "moods": ["Vừa", "Sáng"], "i": 155, "n": "raye - where is my husband!", "added": 1793023621834, "rel": "RAYE - WHERE IS MY HUSBAND! (Official Music Video).mp3", "fav": false, "tags": []}, {"title": "Realization - Classical Chamber Music", "ext": ".mp3", "dur": 172.9, "bpm": 123, "en": 65, "level": "Trung bình", "moods": ["Vừa"], "i": 156, "n": "realization - classical chamber music", "added": 1793023644965, "rel": "Realization - Classical Chamber Music - YouTube.mp3", "fav": false, "tags": []}, {"title": "Reborn", "ext": ".mp3", "dur": 251.3, "bpm": 143.6, "en": 31, "level": "Thấp", "moods": ["Nhanh", "Trầm"], "i": 157, "n": "reborn", "added": 1793023609890, "rel": "Reborn.mp3", "fav": false, "tags": []}, {"title": "Redbone - Come and Get Your Love -Guardians of the Galaxy", "ext": ".mp3", "dur": 205.9, "bpm": 107.7, "en": 80, "level": "Cao", "moods": ["Vừa"], "i": 158, "n": "redbone - come and get your love -guardians of the galaxy", "added": 1793023614708, "rel": "Redbone - Come and Get Your Love (Lyrics) -Guardians of the Galaxy- - YouTube.mp3", "fav": false, "tags": []}, {"title": "Rescue", "ext": ".mp3", "dur": 201.4, "bpm": 123, "en": 25, "level": "Thấp", "moods": ["Vừa", "Trầm"], "i": 159, "n": "rescue", "added": 1793023609979, "rel": "Rescue.mp3", "fav": false, "tags": []}, {"title": "Rise Above", "ext": ".mp3", "dur": 150.6, "bpm": 89.1, "en": 60, "level": "Trung bình", "moods": ["Chậm"], "i": 160, "n": "rise above", "added": 1793023645222, "rel": "Rise Above - YouTube.mp3", "fav": false, "tags": []}, {"title": "Sal", "ext": ".mp3", "dur": 172.4, "bpm": 136, "en": 50, "level": "Trung bình", "moods": ["Nhanh"], "i": 161, "n": "sal", "added": 1793023627196, "rel": "Sal.mp3", "fav": false, "tags": []}, {"title": "See you again", "ext": ".mp3", "dur": 207, "bpm": 95.7, "en": 48, "level": "Trung bình", "moods": ["Chậm", "Trầm"], "i": 162, "n": "see you again", "added": 1793023608048, "rel": "See you again.mp3", "fav": false, "tags": []}, {"title": "Slow Fast Hazel", "ext": ".mp3", "dur": 233.2, "bpm": 143.6, "en": 77, "level": "Cao", "moods": ["Sôi động", "Nhanh", "Sáng"], "i": 163, "n": "slow fast hazel", "added": 1793023626769, "rel": "Slow Fast Hazel - YouTube.mp3", "fav": false, "tags": []}, {"title": "Slow Fast Hazel", "ext": ".mp3", "dur": 233.3, "bpm": 143.6, "en": 77, "level": "Cao", "moods": ["Sôi động", "Nhanh", "Sáng"], "i": 164, "n": "slow fast hazel", "added": 1793023641995, "rel": "Slow Fast Hazel.mp3", "fav": false, "tags": []}, {"title": "Smtve - Run To You", "ext": ".mp3", "dur": 297.5, "bpm": 152, "en": 50, "level": "Trung bình", "moods": ["Nhanh", "Sáng"], "i": 165, "n": "smtve - run to you", "added": 1793023622239, "rel": "Smtve - Run To You (Official Song) - YouTube.mp3", "fav": false, "tags": []}, {"title": "Solstice (Christmas Version)", "ext": ".mp3", "dur": 190.5, "bpm": 123, "en": 51, "level": "Trung bình", "moods": ["Vừa"], "i": 166, "n": "solstice (christmas version)", "added": 1793023615070, "rel": "Solstice (Christmas Version).mp3", "fav": false, "tags": []}, {"title": "Sparkle - Your Name AMV", "ext": ".mp3", "dur": 410.1, "bpm": 123, "en": 66, "level": "Trung bình", "moods": ["Vừa"], "i": 167, "n": "sparkle - your name amv", "added": 1793023633886, "rel": "Sparkle - Your Name AMV.mp3", "fav": false, "tags": []}, {"title": "Stephen Sanchez - SWEET LOVE", "ext": ".mp3", "dur": 184, "bpm": 129.2, "en": 58, "level": "Trung bình", "moods": ["Vừa", "Sáng"], "i": 168, "n": "stephen sanchez - sweet love", "added": 1793023608237, "rel": "Stephen Sanchez - SWEET LOVE (Official Video).mp3", "fav": false, "tags": []}, {"title": "Strings of Time", "ext": ".mp3", "dur": 222.2, "bpm": 136, "en": 39, "level": "Trung bình", "moods": ["Nhanh"], "i": 169, "n": "strings of time", "added": 1793023622556, "rel": "Strings of Time.mp3", "fav": false, "tags": []}, {"title": "SUMMERTIME", "ext": ".mp3", "dur": 195.7, "bpm": 172.3, "en": 100, "level": "Cao", "moods": ["Sôi động", "Nhanh", "Sáng"], "i": 170, "n": "summertime", "added": 1793023618943, "rel": "SUMMERTIME.mp3", "fav": false, "tags": []}, {"title": "Sunbeam", "ext": ".mp3", "dur": 162.9, "bpm": 136, "en": 51, "level": "Trung bình", "moods": ["Nhanh"], "i": 171, "n": "sunbeam", "added": 1793023645364, "rel": "Sunbeam - YouTube.mp3", "fav": false, "tags": []}, {"title": "suno-song-89c8d536", "ext": ".mp3", "dur": 129.1, "bpm": 99.4, "en": 35, "level": "Trung bình", "moods": ["Chậm", "Trầm"], "i": 172, "n": "suno-song-89c8d536", "added": 1793023614885, "rel": "suno-song-89c8d536.mp3", "fav": false, "tags": []}, {"title": "Sweet Bird Sound - Morning Sound Effect Garden Bird", "ext": ".mp3", "dur": 5.7, "bpm": 117.5, "en": 0, "level": "Thấp", "moods": ["Thư giãn", "Vừa", "Sáng"], "i": 173, "n": "sweet bird sound - morning sound effect garden bird", "added": 1793023642016, "rel": "Sweet Bird Sound - Morning Sound Effect Garden Bird - YouTube.mp3", "fav": false, "tags": []}, {"title": "Taylor Swift - Daylight", "ext": ".mp3", "dur": 289.7, "bpm": 99.4, "en": 67, "level": "Trung bình", "moods": ["Chậm"], "i": 174, "n": "taylor swift - daylight", "added": 1793023610621, "rel": "Taylor Swift - Daylight (Lyric Video).mp3", "fav": false, "tags": []}, {"title": "Taylor Swift - Enchanted - Ed Sheeran, Charlie Puth,", "ext": ".mp3", "dur": 1050.9, "bpm": 161.5, "en": 59, "level": "Trung bình", "moods": ["Nhanh", "Sáng"], "i": 175, "n": "taylor swift - enchanted - ed sheeran, charlie puth,", "added": 1793023624500, "rel": "Taylor Swift - Enchanted (Lyrics) - Ed Sheeran, Charlie Puth,.mp3", "fav": false, "tags": []}, {"title": "Teddy Swims - Make You Feel My Love (Cover)", "ext": ".mp3", "dur": 242.9, "bpm": 143.6, "en": 37, "level": "Trung bình", "moods": ["Nhanh"], "i": 176, "n": "teddy swims - make you feel my love (cover)", "added": 1793023618982, "rel": "Teddy Swims - Make You Feel My Love (Cover) - YouTube.mp3", "fav": false, "tags": []}, {"title": "The Interstellar Experience", "ext": ".mp3", "dur": 204.1, "bpm": 99.4, "en": 29, "level": "Thấp", "moods": ["Thư giãn", "Chậm", "Trầm"], "i": 177, "n": "the interstellar experience", "added": 1793023632126, "rel": "The Interstellar Experience.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "The Rest of My Life", "ext": ".mp3", "dur": 172.1, "bpm": 136, "en": 81, "level": "Cao", "moods": ["Sôi động", "Nhanh"], "i": 178, "n": "the rest of my life", "added": 1793023622860, "rel": "The Rest of My Life.mp3", "fav": false, "tags": []}, {"title": "The Satellite Station - I Want to Spend It with You", "ext": ".wav", "dur": 212.8, "bpm": 123, "en": 90, "level": "Cao", "moods": ["Sôi động", "Vừa", "Sáng"], "i": 179, "n": "the satellite station - i want to spend it with you", "added": 1793023619002, "rel": "The Satellite Station - I Want to Spend It with You.wav", "fav": false, "tags": []}, {"title": "The Weeknd - Save Your Tears Ali Gatie - It's You (Mix)", "ext": ".mp3", "dur": 1144.6, "bpm": 117.5, "en": 100, "level": "Cao", "moods": ["Vừa", "Sáng"], "i": 180, "n": "the weeknd - save your tears ali gatie - it's you (mix)", "added": 1793023624590, "rel": "The Weeknd - Save Your Tears (Lyrics) Ali Gatie - It's You (Mix).mp3", "fav": false, "tags": []}, {"title": "The World Is Ours For The Taking (feat. Tim Halperin & Zachary David)", "ext": ".mp3", "dur": 197.8, "bpm": 143.6, "en": 70, "level": "Trung bình", "moods": ["Nhanh"], "i": 181, "n": "the world is ours for the taking (feat. tim halperin & zachary david)", "added": 1793023619618, "rel": "The World Is Ours For The Taking (feat. Tim Halperin & Zachary David).mp3", "fav": false, "tags": []}, {"title": "the-miracles-120169", "ext": ".aac", "dur": 368.6, "bpm": 99.4, "en": 51, "level": "Trung bình", "moods": ["Chậm"], "i": 182, "n": "the-miracles-120169", "added": 1793023634100, "rel": "the-miracles-120169.aac", "fav": false, "tags": []}, {"title": "the-racer-17184", "ext": ".aac", "dur": 178.3, "bpm": 107.7, "en": 47, "level": "Trung bình", "moods": ["Vừa", "Trầm"], "i": 183, "n": "the-racer-17184", "added": 1793023605599, "rel": "the-racer-17184.aac", "fav": false, "tags": []}, {"title": "This is my Vow (Duet Version)- Christian Wedding Song", "ext": ".mp3", "dur": 262.7, "bpm": 117.5, "en": 46, "level": "Trung bình", "moods": ["Vừa"], "i": 184, "n": "this is my vow (duet version)- christian wedding song", "added": 1793023620508, "rel": "This is my Vow (Duet Version)- Christian Wedding Song.mp3", "fav": false, "tags": []}, {"title": "This is my Vow (Part 2) - Christian Wedding Song", "ext": ".mp3", "dur": 226.2, "bpm": 136, "en": 51, "level": "Trung bình", "moods": ["Nhanh", "Sáng"], "i": 185, "n": "this is my vow (part 2) - christian wedding song", "added": 1793023636737, "rel": "This is my Vow (Part 2) - Christian Wedding Song - YouTube.mp3", "fav": false, "tags": []}, {"title": "This Life of Time", "ext": ".mp3", "dur": 194.7, "bpm": 152, "en": 47, "level": "Trung bình", "moods": ["Nhanh"], "i": 186, "n": "this life of time", "added": 1793023615112, "rel": "This Life of Time.mp3", "fav": false, "tags": []}, {"title": "This Must Be Love", "ext": ".mp3", "dur": 214.5, "bpm": 129.2, "en": 62, "level": "Trung bình", "moods": ["Vừa"], "i": 187, "n": "this must be love", "added": 1793023636486, "rel": "This Must Be Love - YouTube.mp3", "fav": false, "tags": []}, {"title": "Tim Halperin - Our Story Starts Here ft. Roary", "ext": ".mp3", "dur": 250.8, "bpm": 143.6, "en": 75, "level": "Cao", "moods": ["Sôi động", "Nhanh", "Sáng"], "i": 188, "n": "tim halperin - our story starts here ft. roary", "added": 1793023619781, "rel": "Tim Halperin - Our Story Starts Here ft. Roary (Official Audio) - YouTube.mp3", "fav": false, "tags": []}, {"title": "Today I Give My Heart  - Romantic Wedding Duet", "ext": ".mp3", "dur": 227.7, "bpm": 136, "en": 44, "level": "Trung bình", "moods": ["Nhanh", "Sáng"], "i": 189, "n": "today i give my heart  - romantic wedding duet", "added": 1793023613737, "rel": "Today I Give My Heart  - Romantic Wedding Duet (Official Lyric Video).mp3", "fav": false, "tags": []}, {"title": "Tình Em Là Đại Dương", "ext": ".mp3", "dur": 290.2, "bpm": 123, "en": 91, "level": "Cao", "moods": ["Sôi động", "Vừa"], "i": 190, "n": "tinh em la đai duong", "added": 1793023620577, "rel": "Tình Em Là Đại Dương.mp3", "fav": false, "tags": []}, {"title": "Until the End of Time  - Romantic Wedding Love Song 2025 - Emotional First Dance Ballad", "ext": ".mp3", "dur": 209.2, "bpm": 136, "en": 70, "level": "Cao", "moods": ["Sôi động", "Nhanh", "Sáng"], "i": 191, "n": "until the end of time  - romantic wedding love song 2025 - emotional first dance ballad", "added": 1793023619813, "rel": "Until the End of Time  - Romantic Wedding Love Song 2025 - Emotional First Dance Ballad - YouTube.mp3", "fav": false, "tags": []}, {"title": "Until The Stars Fade", "ext": ".mp3", "dur": 295, "bpm": 143.6, "en": 57, "level": "Trung bình", "moods": ["Nhanh", "Sáng"], "i": 192, "n": "until the stars fade", "added": 1793023608112, "rel": "Until The Stars Fade.mp3", "fav": false, "tags": []}, {"title": "Until The Stars Let Go by RebelMoon - Suno", "ext": ".mp3", "dur": 215, "bpm": 152, "en": 45, "level": "Trung bình", "moods": ["Nhanh", "Sáng"], "i": 193, "n": "until the stars let go by rebelmoon - suno", "added": 1793023608149, "rel": "Until The Stars Let Go by RebelMoon - Suno.mp3", "fav": false, "tags": []}, {"title": "Utah", "ext": ".mp3", "dur": 144.1, "bpm": 129.2, "en": 74, "level": "Cao", "moods": ["Sôi động", "Vừa"], "i": 194, "n": "utah", "added": 1793023610026, "rel": "Utah.mp3", "fav": false, "tags": []}, {"title": "wave", "ext": ".mp3", "dur": 140.9, "bpm": 123, "en": 19, "level": "Thấp", "moods": ["Vừa"], "i": 195, "n": "wave", "added": 1793023627083, "rel": "wave - YouTube.mp3", "fav": false, "tags": []}, {"title": "Way Back Into Love", "ext": ".mp3", "dur": 277.9, "bpm": 99.4, "en": 74, "level": "Cao", "moods": ["Chậm", "Sáng"], "i": 196, "n": "way back into love", "added": 1793023610192, "rel": "Way Back Into Love.mp3", "fav": false, "tags": []}, {"title": "We Write Our Destiny", "ext": ".mp3", "dur": 185.3, "bpm": 129.2, "en": 44, "level": "Trung bình", "moods": ["Vừa"], "i": 197, "n": "we write our destiny", "added": 1793023624711, "rel": "We Write Our Destiny.mp3", "fav": false, "tags": []}, {"title": "wedding crowd cheering and clapping sound effect (royalty free)", "ext": ".mp3", "dur": 18.2, "bpm": 107.7, "en": 0, "level": "Thấp", "moods": ["Thư giãn", "Vừa", "Sáng"], "i": 198, "n": "wedding crowd cheering and clapping sound effect (royalty free)", "added": 1793023614764, "rel": "wedding crowd cheering and clapping sound effect (royalty free).mp3", "fav": false, "tags": []}, {"title": "WEDDING MUSIC - RECEPTION MUSIC - INSTRUMENTAL LOVE SONGS", "ext": ".mp3", "dur": 4052, "bpm": 136, "en": 65, "level": "Trung bình", "moods": ["Nhanh"], "i": 199, "n": "wedding music - reception music - instrumental love songs", "added": 1793023619836, "rel": "WEDDING MUSIC - RECEPTION MUSIC - INSTRUMENTAL LOVE SONGS.mp3", "fav": false, "tags": []}, {"title": "What Ready Feels Like", "ext": ".mp3", "dur": 173.5, "bpm": 129.2, "en": 79, "level": "Cao", "moods": ["Sôi động", "Vừa"], "i": 200, "n": "what ready feels like", "added": 1793023627244, "rel": "What Ready Feels Like.mp3", "fav": false, "tags": []}, {"title": "Wherever You Are", "ext": ".mp3", "dur": 197.3, "bpm": 103.4, "en": 92, "level": "Cao", "moods": ["Vừa", "Sáng"], "i": 201, "n": "wherever you are", "added": 1793023610427, "rel": "Wherever You Are.mp3", "fav": false, "tags": []}, {"title": "wonderful-life-44360", "ext": ".aac", "dur": 140.2, "bpm": 112.3, "en": 69, "level": "Trung bình", "moods": ["Vừa"], "i": 202, "n": "wonderful-life-44360", "added": 1793023634184, "rel": "wonderful-life-44360.aac", "fav": false, "tags": []}, {"title": "Wonka Soundtrack - Pure Imagination - Timothée Chalamet - WaterTower", "ext": ".mp3", "dur": 191.1, "bpm": 107.7, "en": 0, "level": "Thấp", "moods": ["Thư giãn", "Vừa"], "i": 203, "n": "wonka soundtrack - pure imagination - timothee chalamet - watertower", "added": 1793023634215, "rel": "Wonka Soundtrack - Pure Imagination - Timothée Chalamet - WaterTower.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "Words You Need to Hear", "ext": ".mp3", "dur": 259.1, "bpm": 161.5, "en": 74, "level": "Cao", "moods": ["Sôi động", "Nhanh"], "i": 204, "n": "words you need to hear", "added": 1793023622902, "rel": "Words You Need to Hear.mp3", "fav": false, "tags": []}, {"title": "Worth the Wait (Christian Wedding Song)", "ext": ".mp3", "dur": 206.7, "bpm": 143.6, "en": 36, "level": "Trung bình", "moods": ["Nhanh", "Sáng"], "i": 205, "n": "worth the wait (christian wedding song)", "added": 1793023634272, "rel": "Worth the Wait (Christian Wedding Song) - YouTube.mp3", "fav": false, "tags": []}, {"title": "Wouldn't Miss It for the World", "ext": ".mp3", "dur": 354.7, "bpm": 107.7, "en": 58, "level": "Trung bình", "moods": ["Vừa"], "i": 206, "n": "wouldn't miss it for the world", "added": 1793023636541, "rel": "Wouldn't Miss It for the World - YouTube.mp3", "fav": false, "tags": []}, {"title": "Xin Má Rước", "ext": ".mp3", "dur": 236.6, "bpm": 136, "en": 100, "level": "Cao", "moods": ["Sôi động", "Nhanh", "Sáng"], "i": 207, "n": "xin ma ruoc", "added": 1793023627429, "rel": "Xin Má Rước.mp3", "fav": false, "tags": []}, {"title": "y2mate.com - CHỈ CẦN CÓ NHAU  VŨ CÁT TƯỜNG x PNJ  OFFICIAL MUSIC VIDEO", "ext": ".mp3", "dur": 268.9, "bpm": 136, "en": 60, "level": "Trung bình", "moods": ["Nhanh"], "i": 208, "n": "y2mate.com - chi can co nhau  vu cat tuong x pnj  official music video", "added": 1793023620229, "rel": "y2mate.com - CHỈ CẦN CÓ NHAU  VŨ CÁT TƯỜNG x PNJ  OFFICIAL MUSIC VIDEO.mp3", "fav": false, "tags": []}, {"title": "Yehezkel Raz - Ballerina", "ext": ".mp3", "dur": 108.6, "bpm": 161.5, "en": 30, "level": "Thấp", "moods": ["Nhanh", "Trầm"], "i": 209, "n": "yehezkel raz - ballerina", "added": 1793023636760, "rel": "Yehezkel Raz - Ballerina - YouTube.mp3", "fav": false, "tags": []}, {"title": "Yonderchild - -All I Need", "ext": ".mp3", "dur": 232, "bpm": 161.5, "en": 86, "level": "Cao", "moods": ["Sôi động", "Nhanh"], "i": 210, "n": "yonderchild - -all i need", "added": 1793023627292, "rel": "Yonderchild - -All I Need- (Official Audio).mp3", "fav": false, "tags": []}, {"title": "You Will Find Me (Alternate Version)", "ext": ".mp3", "dur": 366.7, "bpm": 117.5, "en": 29, "level": "Thấp", "moods": ["Thư giãn", "Vừa", "Trầm"], "i": 211, "n": "you will find me (alternate version)", "added": 1793023621877, "rel": "You Will Find Me (Alternate Version).mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "zoom-out-45771", "ext": ".aac", "dur": 310.7, "bpm": 136, "en": 54, "level": "Trung bình", "moods": ["Nhanh", "Trầm"], "i": 212, "n": "zoom-out-45771", "added": 1793023605700, "rel": "zoom-out-45771.aac", "fav": false, "tags": []}, {"title": "50 NĂM VỀ SAU - ĐẶNG THANH TUYỀN x F47 COVER x MECHILL", "ext": ".mp3", "dur": 299.3, "bpm": 143.6, "en": 39, "level": "Trung bình", "moods": ["Nhanh"], "i": 213, "n": "50 nam ve sau - đang thanh tuyen x f47 cover x mechill", "added": 1793023622951, "rel": "[Official MV] 50 NĂM VỀ SAU - ĐẶNG THANH TUYỀN x F47 COVER x MECHILL.mp3", "fav": false, "tags": []}, {"title": "Đừng Làm Trái Tim Anh Đau - Sơn Tùng MTP - Lyrics Video", "ext": ".mp3", "dur": 281.2, "bpm": 123, "en": 69, "level": "Trung bình", "moods": ["Vừa"], "i": 214, "n": "đung lam trai tim anh đau - son tung mtp - lyrics video", "added": 1793023610661, "rel": "Đừng Làm Trái Tim Anh Đau - Sơn Tùng MTP - Lyrics Video -.mp3", "fav": false, "tags": []}, {"title": "〜wish upon a Snowman〜", "ext": ".mp3", "dur": 127.6, "bpm": 95.7, "en": 54, "level": "Trung bình", "moods": ["Chậm", "Sáng"], "i": 215, "n": "〜wish upon a snowman〜", "added": 1793023609317, "rel": "〜wish upon a Snowman〜.mp3", "fav": false, "tags": []}, {"title": "周杰倫 Jay Chou最偉大的作品 Greatest Works of ArtOfficial MV", "ext": ".mp3", "dur": 306.2, "bpm": 107.7, "en": 48, "level": "Trung bình", "moods": ["Vừa"], "i": 216, "n": "周杰倫 jay chou最偉大的作品 greatest works of artofficial mv", "added": 1793023621294, "rel": "周杰倫 Jay Chou最偉大的作品 Greatest Works of ArtOfficial MV.mp3", "fav": false, "tags": []}, {"title": "周杰倫(주걸륜) - 靑花瓷(청화자) - Violin Cover", "ext": ".mp3", "dur": 235, "bpm": 107.7, "en": 40, "level": "Trung bình", "moods": ["Vừa"], "i": 217, "n": "周杰倫(주걸륜) - 靑花瓷(청화자) - violin cover", "added": 1793023621530, "rel": "周杰倫(주걸륜) - 靑花瓷(청화자) - Violin Cover.mp3", "fav": false, "tags": []}, {"title": "大丈夫って (Strings Version)", "ext": ".mp3", "dur": 212.5, "bpm": 143.6, "en": 64, "level": "Trung bình", "moods": ["Nhanh"], "i": 218, "n": "大丈夫って (strings version)", "added": 1793023609357, "rel": "大丈夫って (Strings Version).mp3", "fav": false, "tags": []}, {"title": "最偉大的作品 Greatest Works of Art周杰倫 Jay Chou 大提琴版本", "ext": ".mp3", "dur": 377.5, "bpm": 123, "en": 64, "level": "Trung bình", "moods": ["Vừa", "Trầm"], "i": 219, "n": "最偉大的作品 greatest works of art周杰倫 jay chou 大提琴版本", "added": 1793023621659, "rel": "最偉大的作品 Greatest Works of Art周杰倫 Jay Chou 大提琴版本.mp3", "fav": false, "tags": []}, {"title": "～Before the Thaw～", "ext": ".mp3", "dur": 159.9, "bpm": 112.3, "en": 29, "level": "Thấp", "moods": ["Thư giãn", "Vừa", "Trầm"], "i": 220, "n": "～before the thaw～", "added": 1793023609390, "rel": "～Before the Thaw～.mp3", "fav": false, "tags": [], "cat": "Wedding film"}, {"title": "departure-6000622", "ext": ".aac", "dur": 170.6, "bpm": null, "en": 0, "level": "Chưa phân tích", "moods": [], "isNew": true, "i": 221, "n": "departure-6000622", "added": 1792509975347, "rel": "departure-6000622.aac", "fav": false, "tags": []}, {"title": "IS THIS WHAT LOVE MEANS - by End Of Silence", "ext": ".mp3", "dur": 586, "bpm": null, "en": 0, "level": "Chưa phân tích", "moods": [], "isNew": true, "i": 222, "n": "is this what love means - by end of silence", "added": 1792508809026, "rel": "IS THIS WHAT LOVE MEANS - by End Of Silence.mp3", "fav": false, "tags": []}, {"title": "Jurrivh - You Took My Heart", "ext": ".mp3", "dur": 182.1, "bpm": null, "en": 0, "level": "Chưa phân tích", "moods": [], "isNew": true, "i": 223, "n": "jurrivh - you took my heart", "added": 1792507654956, "rel": "Jurrivh - You Took My Heart (Official Video).mp3", "fav": false, "tags": []}, {"title": "love-first-6000959", "ext": ".aac", "dur": 199.3, "bpm": null, "en": 0, "level": "Chưa phân tích", "moods": [], "isNew": true, "i": 224, "n": "love-first-6000959", "added": 1792510180599, "rel": "love-first-6000959.aac", "fav": false, "tags": []}, {"title": "Nơi Này Có Anh", "ext": ".mp3", "dur": 257.8, "bpm": null, "en": 0, "level": "Chưa phân tích", "moods": [], "isNew": true, "i": 225, "n": "noi nay co anh", "added": 1771911191796, "rel": "Nơi Này Có Anh (Lyrics Video) - YouTube.mp3", "fav": false, "tags": []}, {"title": "Sao Cha Không (Bố Già OST) - Phan Mạnh Quỳnh - Diêu Ngọc Bích Trâm Cover", "ext": ".mp3", "dur": 268.5, "bpm": null, "en": 0, "level": "Chưa phân tích", "moods": [], "isNew": true, "i": 226, "n": "sao cha khong (bo gia ost) - phan manh quynh - dieu ngoc bich tram cover", "added": 1792507933940, "rel": "Sao Cha Không (Bố Già OST) - Phan Mạnh Quỳnh - Diêu Ngọc Bích Trâm Cover.mp3", "fav": false, "tags": []}];
+
+let CUR_TAB = "music"; // "music" hoac "sfx"
+let PLAYING = null, WAVE = {peaks:null, loading:false, key:null};
+let ROOT_MUSIC = "D:\\02_music", TRACKS_MUSIC = [];
+let ROOT_SFX = "D:\\03_sfx", TRACKS_SFX = [];
+
+// Che do Highlight
+let HIGHLIGHT_ENABLED = true;
+try {
+  const savedHl = localStorage.getItem("musicpanel.highlight");
+  if (savedHl !== null) HIGHLIGHT_ENABLED = (savedHl === "true");
+} catch(e){}
+
+const TAG_RULES = [
+  {tag:"Thư giãn", when:t=>t.level==="Thấp" && (t.bpm||0)<120},
+  {tag:"Sôi động", when:t=>t.level==="Cao" && (t.bpm||0)>=120},
+  {tag:"Chậm",     when:t=>(t.bpm||0)>0 && (t.bpm||0)<100},
+  {tag:"Vừa",      when:t=>(t.bpm||0)>=100 && (t.bpm||0)<130},
+  {tag:"Nhanh",    when:t=>(t.bpm||0)>=130},
+  {tag:"Sáng",     when:t=>(t.cen||0)>=1800},
+  {tag:"Trầm",     when:t=>(t.cen||0)<=1000},
+];
+const LEVELS = ["Thấp","Trung bình","Cao"];
+const MOODS = TAG_RULES.map(r=>r.tag);
+
+// Phan loai SFX tu dong theo ten file
+const SFX_CATEGORIES = [
+  { tag: "Whoosh", match: /whoosh|swish|swoosh|flyby|whip/i },
+  { tag: "Impact", match: /impact|hit|boom|slam|thud|drop|punch|smash|bang|crash|sub/i },
+  { tag: "Riser", match: /riser|rise|sweep|build|crescendo|uplifter/i },
+  { tag: "Transition", match: /transition|trans|wipe|glitch|suck|rewind/i },
+  { tag: "UI / Click", match: /click|pop|beep|button|ui|switch|mouse|tap|interface/i },
+  { tag: "Crowd", match: /crowd|cheer|applause|laugh|clapping|people|audience/i },
+  { tag: "Foley", match: /foley|step|footstep|cloth|door|rustle|walk|paper/i },
+  { tag: "Ambient", match: /ambient|ambience|drone|background|room|rain|water|wind|nature|thunder|bird/i }
+];
+const SFX_TAG_NAMES = SFX_CATEGORIES.map(c=>c.tag);
+
+const $ = s => document.querySelector(s), au = $("#au");
+let store = {fav:[], tags:{}};
+try { Object.assign(store, JSON.parse(localStorage.getItem("musicpanel.v1")||"{}")); } catch(e){}
+
+// State loc rieng cho tung tab
+const SM = {q:"", cat:new Set(), lv:new Set(), md:new Set(), ex:new Set(), fav:false, view:[], cur:-1};
+const SS = {q:"", dir:"", open:new Set(), cat:new Set(), dur:new Set(), lv:new Set(), ex:new Set(), fav:false, view:[], cur:-1};
+
+const norm = s => (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").toLowerCase();
+const fmt = s => { if(s==null||isNaN(s)) return "0:00"; s=Math.round(s); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); };
+const fmtDur = (s, isSfx) => {
+  if(s==null||isNaN(s)) return "—";
+  if(isSfx && s<10) return s.toFixed(1) + "s";
+  return fmt(s);
+};
+const esc = s => String(s||"").replace(/[&<>"]/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const src = p => { p=p.replace(/\\/g,"/"); const parts=p.split("/").map((x,i)=> (i===0 && /^[A-Za-z]:$/.test(x)) ? x : encodeURIComponent(x)); return "file://" + (p.startsWith("/") ? "" : "/") + parts.join("/"); };
+const toRel = (p,r) => { p=p.replace(/\\/g,"/"); r=(r||"").replace(/\\/g,"/").replace(/\/+$/,""); return p.toLowerCase().startsWith(r.toLowerCase()+"/") ? p.slice(r.length+1) : p; };
+const full = (t, tab) => {
+  const root = (tab === "sfx" || CUR_TAB === "sfx") ? ROOT_SFX : ROOT_MUSIC;
+  if (!t || !t.rel) return "";
+  const win = /^[A-Za-z]:/.test(root) || root.includes("\\");
+  const absolute = /^[A-Za-z]:/.test(t.rel) || t.rel.startsWith("/");
+  const base = absolute ? t.rel : root.replace(/[\\\/]+$/,"") + "/" + t.rel;
+  return win ? base.replace(/\//g,"\\") : base.replace(/\\/g,"/");
+};
+
+function detectSfxTags(name) {
+  const found = [];
+  for (const c of SFX_CATEGORIES) {
+    if (c.match.test(name)) found.push(c.tag);
+  }
+  return found;
+}
+
+const conv = (arr, root) => (arr||[]).map((t,i)=>{
+  const {path,...r}=t;
+  const isSfx = (CUR_TAB === "sfx");
+  const autoTags = isSfx ? detectSfxTags(t.title || "") : [];
+  return {
+    ...r,
+    rel: toRel(path || t.rel || "", root),
+    fav: store.fav.includes(i) || !!t.fav,
+    tags: store.tags[i] || t.tags || autoTags,
+    highlight: t.highlight != null ? t.highlight : null
+  };
+});
+
+TRACKS_MUSIC = conv(SEED, ROOT_MUSIC);
+const prepTracks = (list) => (list||[]).forEach((t,i)=>{ t.i=i; t.n=norm(t.title); });
+prepTracks(TRACKS_MUSIC);
+
+function chips(el, items, set, onUpdate){
+  if(!el) return;
+  el.innerHTML = items.map(x=>`<button class="chip" aria-pressed="${set.has(x)}" data-v="${x}">${x}</button>`).join("");
+  el.onclick = e => {
+    const b=e.target.closest(".chip"); if(!b) return;
+    const v=b.dataset.v;
+    set.has(v)?set.delete(v):set.add(v);
+    b.setAttribute("aria-pressed", set.has(v));
+    if(onUpdate) onUpdate();
+    render();
+  };
+}
+
+// Khoi tao chips Music
+chips($("#fCat"), ["Wedding film","Event","None"], SM.cat);
+chips($("#fLevel"), LEVELS, SM.lv);
+chips($("#fMood"), MOODS, SM.md);
+chips($("#fExt"), [...new Set(TRACKS_MUSIC.map(t=>t.ext).filter(Boolean))], SM.ex);
+
+// Khoi tao chips SFX
+chips($("#fSfxCat"), SFX_TAG_NAMES, SS.cat);
+chips($("#fSfxDur"), ["< 2s","2–5s","5–15s","> 15s"], SS.dur);
+chips($("#fSfxLevel"), LEVELS, SS.lv);
+chips($("#fSfxExt"), [".wav", ".mp3", ".aac"], SS.ex);
+
+const num = id => { const v=parseFloat($(id).value); return isNaN(v)?null:v; };
+function inRange(v,lo,hi){ return (lo===null||v>=lo)&&(hi===null||v<=hi); }
+
+function matchMusic(t){
+  const tags = t.tags||[];
+  if(SM.q && !SM.q.split(/\s+/).every(w=>t.n.includes(w)||tags.some(x=>norm(x).includes(w))||(t.moods||[]).some(x=>norm(x).includes(w)))) return false;
+  if(SM.cat.size && !SM.cat.has(t.cat||"None")) return false;
+  if(SM.lv.size && !SM.lv.has(t.level)) return false;
+  if(SM.md.size && ![...SM.md].every(m=>(t.moods||[]).includes(m))) return false;
+  if(SM.ex.size && !SM.ex.has(t.ext)) return false;
+  if(SM.fav && !t.fav) return false;
+  const lo=num("#bmin"), hi=num("#bmax");
+  if(lo!==null||hi!==null){
+    if(t.bpm==null) return false;
+    const c=[t.bpm];
+    if($("#alt").checked) c.push(t.bpm/2, t.bpm*2);
+    if(!c.some(v=>inRange(v,lo,hi))) return false;
+  }
+  if(!inRange(t.dur/60, num("#dmin"), num("#dmax"))) return false;
+  if($("#odd").checked && (t.dur<30 || t.dur>900)) return false;
+  return true;
+}
+
+function matchSfx(t){
+  const tags = t.tags||[];
+  if(SS.dir){ const d=dirOf(t.rel); if(d!==SS.dir && !d.startsWith(SS.dir+"/")) return false; }
+  if(SS.q && !SS.q.split(/\s+/).every(w=>t.n.includes(w)||tags.some(x=>norm(x).includes(w)))) return false;
+  if(SS.cat.size && !tags.some(x=>SS.cat.has(x))) return false;
+  if(SS.lv.size && !SS.lv.has(t.level)) return false;
+  if(SS.ex.size && !SS.ex.has(t.ext)) return false;
+  if(SS.fav && !t.fav) return false;
+  if(SS.dur.size){
+    const d = t.dur || 0;
+    const pass = [...SS.dur].some(rng => {
+      if(rng === "< 2s") return d < 2;
+      if(rng === "2–5s") return d >= 2 && d < 5;
+      if(rng === "5–15s") return d >= 5 && d <= 15;
+      if(rng === "> 15s") return d > 15;
+      return true;
+    });
+    if(!pass) return false;
+  }
+  return true;
+}
+
+const SORTS = {
+  title: (a,b)=>a.title.localeCompare(b.title,"vi"),
+  bpmA:  (a,b)=>(a.bpm||0)-(b.bpm||0),
+  bpmD:  (a,b)=>(b.bpm||0)-(a.bpm||0),
+  enD:   (a,b)=>(b.en||0)-(a.en||0),
+  enA:   (a,b)=>(a.en||0)-(b.en||0),
+  durA:  (a,b)=>(a.dur||0)-(b.dur||0),
+  durD:  (a,b)=>(b.dur||0)-(a.dur||0),
+  newD:  (a,b)=>(b.added||0)-(a.added||0),
+  newA:  (a,b)=>(a.added||0)-(b.added||0)
+};
+
+function getActiveList(){ return CUR_TAB === "sfx" ? TRACKS_SFX : TRACKS_MUSIC; }
+function getActiveState(){ return CUR_TAB === "sfx" ? SS : SM; }
+function getTargetBin(){ return CUR_TAB === "sfx" ? "03_sfx" : "02_music"; }
+
+function getHighlightTime(t){
+  if(CUR_TAB === "sfx") return 0;
+  if(t.highlight && t.highlight > 0) return Math.min(t.highlight, Math.max(0, (t.dur||0) - 5));
+  if(t.dur && t.dur >= 45) return Math.round(t.dur * 0.35);
+  return 0;
+}
+
+function updateHighlightUI(){
+  const btn = $("#hlToggle");
+  const st = $("#hlState");
+  if(HIGHLIGHT_ENABLED){
+    btn.classList.add("on");
+    st.textContent = "BẬT";
+  } else {
+    btn.classList.remove("on");
+    st.textContent = "TẮT";
+  }
+}
+$("#hlToggle").onclick = () => {
+  HIGHLIGHT_ENABLED = !HIGHLIGHT_ENABLED;
+  try { localStorage.setItem("musicpanel.highlight", String(HIGHLIGHT_ENABLED)); } catch(e){}
+  updateHighlightUI();
+  toast(HIGHLIGHT_ENABLED ? "Đã BẬT: Tự động nhảy đến đoạn Highlight khi chọn bài" : "Đã TẮT: Phát bình thường từ đầu bài", true);
+  if(HIGHLIGHT_ENABLED && CUR_TAB === "music" && !au.paused && au.duration){
+    const S = getActiveState();
+    const playing = S.cur>=0 ? getActiveList()[S.cur] : null;
+    if(playing){
+      const hl = getHighlightTime(playing);
+      if(hl > 0) au.currentTime = hl;
+    }
+  }
+};
+updateHighlightUI();
+
+function render(){
+  const isSfx = (CUR_TAB === "sfx");
+  const tracks = getActiveList();
+  const S = getActiveState();
+  const matcher = isSfx ? matchSfx : matchMusic;
+  
+  S.view = tracks.filter(matcher).sort(SORTS[$("#sort").value] || SORTS.title);
+  $("#count").textContent = S.view.length + " / " + tracks.length + (isSfx ? " file SFX" : " bài");
+  $("#bMusic").textContent = TRACKS_MUSIC.length;
+  $("#bSfx").textContent = TRACKS_SFX.length;
+  if(isSfx) renderTree();
+  $("#hCol3").textContent = isSfx ? "Phân loại" : "BPM";
+
+  const playing = S.cur>=0 ? tracks[S.cur] : null;
+  const listEl = $("#list");
+
+  if(!S.view.length){
+    listEl.innerHTML = `<div class="empty">${isSfx ? "Chưa có file SFX nào khớp. Bấm <b>⟳ Quét thư mục SFX</b> hoặc xóa bớt bộ lọc." : "Không có bài nào khớp. Thử bỏ bớt bộ lọc."}</div>`;
+    return;
+  }
+
+  listEl.innerHTML = S.view.map(t=>{
+    const ut = (t.tags||[]).map((x,k)=>`<span class="t u" data-a="rm" data-k="${k}" title="Bấm để xóa tag">${esc(x)} ×</span>`).join("");
+    const on = playing && playing.i===t.i, fv = !!t.fav;
+    const dir = dirOf(t.rel);
+    const dirTag = (isSfx && dir) ? `<button class="t" data-a="dir" data-d="${esc(dir)}" title="Mở thư mục này">📁 ${esc(dir)}</button>` : "";
+    const ioTag = (t.inT!=null || t.outT!=null) ? `<button class="t io-tag" data-a="clr" title="Bấm để xóa In/Out">✂ ${fmtT(t.inT||0)} – ${t.outT!=null?fmtT(t.outT):"hết"} ×</button>` : "";
+    
+    // Tag highlight button cho Music
+    const hlBtn = (!isSfx && (t.dur||0)>=25) ? `<button class="t hl-jump" data-a="hl" title="Phát ngay đoạn Highlight (${fmt(getHighlightTime(t))})">✨ Highlight</button>` : "";
+    
+    // Loai video pills cho Music
+    const catPills = !isSfx ? `<span class="seg">${["Wedding film","Event","None"].map(c=>`<button class="sg${(t.cat||"None")===c?" on":""}" data-a="cat" data-c="${c}">${c}</button>`).join("")}</span>` : "";
+
+    // Auto moods/tags
+    const autoTagsHtml = (!isSfx ? (t.moods||[]) : (t.sfxCat||detectSfxTags(t.title))).map(m=>`<span class="t ${isSfx?'sfx-cat':''}">${esc(m)}</span>`).join("");
+
+    const col3 = isSfx ? (t.tags && t.tags[0] ? esc(t.tags[0]) : "SFX") : (t.bpm ? Math.round(t.bpm)+" BPM" : "—");
+
+    return `<div class="row${on?" on":""}" data-i="${t.i}">
+      <button class="pb" data-a="play" aria-label="Phát">${on&&!au.paused?"❚❚":"▶"}</button>
+      <div class="nm">
+        <b title="${esc(t.title)}">${esc(t.title)}</b>
+        <div class="tg">
+          ${t.isNew ? '<span class="t" style="background:#284a37;color:#8ce8b1">Mới</span>' : ''}
+          ${dirTag}
+          ${autoTagsHtml}
+          ${ut}
+          ${hlBtn}
+          ${ioTag}
+          <button class="t add" data-a="tag">+ tag</button>
+          ${catPills}
+        </div>
+      </div>
+      <span class="num bp">${col3}</span>
+      <span class="num">${fmtDur(t.dur, isSfx)}</span>
+      <div class="en" title="Năng lượng ${t.en||0} / 100"><i style="width:${t.en||0}%"></i></div>
+      <span class="ex">${(t.ext||"").slice(1)}</span>
+      <div class="ic">
+        <button class="ac" data-a="pool" title="Thêm vào Media Pool (bin ${getTargetBin()})">+ Media</button>
+        <button class="ac" data-a="tl" title="Đặt vào timeline đang mở">+ Timeline</button>
+        <button class="fv${fv?" on":""}" data-a="fav" aria-label="Yêu thích">${fv?"★":"☆"}</button>
+        <button data-a="copy" aria-label="Chép đường dẫn" title="Chép đường dẫn">⧉</button>
+        <button data-a="del" aria-label="Xóa" title="Xóa">🗑</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function toast(m,ok){
+  const e=$("#toast"); e.className=ok?"ok":""; e.textContent=m; e.style.display="block";
+  clearTimeout(toast.t); toast.t=setTimeout(()=>e.style.display="none",4000);
+}
+
+function play(i, forceHighlight = false){
+  const tracks = getActiveList();
+  const S = getActiveState();
+  const t = tracks[i];
+  if(!t) return;
+  S.cur = i;
+  
+  const filePath = full(t, CUR_TAB);
+  au.src = src(filePath);
+  PLAYING = {t, tab: CUR_TAB}; loadWave(filePath); updateIO();
+  
+  const shouldHl = forceHighlight || (HIGHLIGHT_ENABLED && CUR_TAB === "music");
+  const hlTime = shouldHl ? getHighlightTime(t) : 0;
+  
+  let jumped = false;
+  const seekHighlight = () => {
+    if(!jumped && hlTime > 0){
+      jumped = true;
+      try {
+        au.currentTime = hlTime;
+        toast(`✨ Đang phát đoạn Highlight (${fmt(hlTime)})`, true);
+      } catch(e){}
+    }
+  };
+
+  au.onloadedmetadata = () => {
+    $("#tot").textContent = fmtDur(au.duration, CUR_TAB === "sfx");
+    seekHighlight();
+  };
+
+  au.play().then(() => {
+    seekHighlight();
+  }).catch(()=>{});
+
+  $("#np").firstChild.nodeValue = t.title;
+  const sub = CUR_TAB === "sfx" 
+    ? (fmtDur(t.dur, true) + " · " + (t.ext||"").slice(1))
+    : ((t.bpm ? Math.round(t.bpm)+" BPM" : "chưa có BPM") + " · " + (t.level||"") + " · " + (t.ext||"").slice(1));
+  $("#np small").textContent = sub;
+  render();
+}
+
+function step(d){
+  const S = getActiveState();
+  const k = S.view.findIndex(t=>t.i===S.cur);
+  const n = S.view[k+d];
+  if(n) play(n.i);
+}
+
+async function call(fn, okMsg){
+  if(!window.musicAPI){ toast("Chỉ dùng được khi mở trong DaVinci Resolve."); return; }
+  try {
+    const r = await fn();
+    r && r.ok ? toast((r.msg||okMsg) + (r.note ? " · " + r.note : ""), true) : toast((r&&r.error)||"Không thực hiện được.");
+  } catch(e){ toast("Lỗi: " + e.message); }
+}
+
+$("#addAll").onclick = () => {
+  const S = getActiveState();
+  const n = S.view.length;
+  const bin = getTargetBin();
+  if(!n) return;
+  if(n > 30 && !confirm(`Thêm ${n} file vào Media Pool (bin ${bin})?`)) return;
+  call(()=>window.musicAPI.addToPool(S.view.map(entryOf), bin), `Đã thêm ${n} file vào Media Pool (bin ${bin})`);
+};
+
+$("#list").onclick = e => {
+  const row = e.target.closest(".row");
+  if(!row) return;
+  const i = +row.dataset.i;
+  const a = e.target.closest("[data-a]")?.dataset.a;
+  const tracks = getActiveList();
+  const S = getActiveState();
+  const bin = getTargetBin();
+
+  if(a==="play" || !a){
+    if(S.cur === i){
+      au.paused ? au.play() : au.pause();
+    } else {
+      play(i);
+    }
+  } else if(a==="hl"){
+    play(i, true);
+  } else if(a==="dir"){
+    SS.dir = e.target.closest("[data-a]").dataset.d; render();
+  } else if(a==="clr"){
+    tracks[i].inT = null; tracks[i].outT = null; persist(); updateIO(); drawWave(); render();
+  } else if(a==="fav"){
+    tracks[i].fav = !tracks[i].fav;
+    persist(); render();
+  } else if(a==="tag"){
+    const v = prompt("Nhập tag mới:");
+    if(v && v.trim()){
+      (tracks[i].tags = tracks[i].tags || []).push(v.trim());
+      persist(); render();
+    }
+  } else if(a==="rm"){
+    tracks[i].tags.splice(+e.target.dataset.k, 1);
+    persist(); render();
+  } else if(a==="pool"){
+    call(()=>window.musicAPI.addToPool([entryOf(tracks[i])], bin), `Đã thêm vào Media Pool (bin ${bin})`);
+  } else if(a==="tl"){
+    call(()=>window.musicAPI.addToTimeline(entryOf(tracks[i]), bin), "Đã đặt vào cuối timeline");
+  } else if(a==="cat"){
+    tracks[i].cat = e.target.closest("[data-a]").dataset.c;
+    persist(); render();
+  } else if(a==="del"){
+    if(!window.musicAPI){ toast("Chỉ dùng được khi mở trong DaVinci Resolve."); return; }
+    delIdx = i;
+    $("#dmsg").innerHTML = `Xóa file “<b>${esc(tracks[i].title)}</b>”?<br>• <b>Chỉ xóa khỏi panel</b>: file vẫn còn trong thư mục.<br>• <b>Xóa luôn file</b>: chuyển vào Thùng rác của máy.<br>`;
+    $("#dlg").style.display = "grid";
+  } else if(a==="copy"){
+    const p = full(tracks[i], CUR_TAB);
+    navigator.clipboard.writeText(p).then(()=>toast("Đã chép đường dẫn: " + p, true));
+  }
+};
+
+au.onplay = au.onpause = () => { $("#pp").textContent = au.paused ? "▶" : "❚❚"; render(); };
+au.onended = () => step(1);
+au.onerror = () => toast("Không phát được file. Kiểm tra file còn trên ổ cứng.");
+au.ontimeupdate = () => {
+  $("#cur").textContent = fmtDur(au.currentTime, CUR_TAB === "sfx");
+  drawWave();
+  if(au.duration) $("#seek").value = (au.currentTime / au.duration) * 1000;
+};
+$("#seek").oninput = e => { if(au.duration) au.currentTime = (e.target.value / 1000) * au.duration; };
+$("#vol").oninput = e => au.volume = e.target.value / 100; au.volume = .8;
+$("#pp").onclick = () => {
+  const S = getActiveState();
+  if(S.cur < 0) S.view[0] && play(S.view[0].i);
+  else au.paused ? au.play() : au.pause();
+};
+$("#prev").onclick = () => step(-1);
+$("#next").onclick = () => step(1);
+
+$("#q").oninput = e => {
+  const S = getActiveState();
+  S.q = norm(e.target.value).trim();
+  render();
+};
+
+$("#favOnly").onclick = e => {
+  SM.fav = !SM.fav;
+  e.currentTarget.setAttribute("aria-pressed", SM.fav);
+  render();
+};
+$("#favSfxOnly").onclick = e => {
+  SS.fav = !SS.fav;
+  e.currentTarget.setAttribute("aria-pressed", SS.fav);
+  render();
+};
+
+["#bmin","#bmax","#dmin","#dmax","#alt","#odd","#sort"].forEach(s=>$(s).oninput=$(s).onchange=render);
+
+$("#reset").onclick = () => {
+  if(CUR_TAB === "music"){
+    SM.cat.clear(); SM.lv.clear(); SM.md.clear(); SM.ex.clear(); SM.fav=false; SM.q="";
+    $("#q").value="";
+    ["#bmin","#bmax","#dmin","#dmax"].forEach(s=>$(s).value="");
+    $("#alt").checked=false; $("#odd").checked=true;
+    $("#filterMusic").querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed","false"));
+  } else {
+    SS.dir=""; SS.cat.clear(); SS.dur.clear(); SS.lv.clear(); SS.ex.clear(); SS.fav=false; SS.q="";
+    $("#q").value="";
+    $("#filterSfx").querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed","false"));
+  }
+  render();
+};
+
+document.addEventListener("keydown", e => {
+  if(e.code==="Space" && !/INPUT|TEXTAREA|SELECT|BUTTON/.test(e.target.tagName)){
+    e.preventDefault();
+    $("#pp").click();
+  }
+});
+
+const getDur = p => new Promise(res => {
+  const a = new Audio();
+  a.preload = "metadata";
+  a.onloadedmetadata = () => res(a.duration || 0);
+  a.onerror = () => res(0);
+  a.src = src(p);
+});
+
+const persist = () => {
+  if(!window.musicAPI) return;
+  window.musicAPI.saveLibrary({
+    version: 3,
+    root: ROOT_MUSIC,
+    tracks: TRACKS_MUSIC,
+    sfxRoot: ROOT_SFX,
+    sfxTracks: TRACKS_SFX
+  });
+};
+
+function applyClass(t){
+  const raw = 0.602*(t.rms||-20) + 0.00029*(t.cen||1500) + 0.145;
+  t.en = Math.round(Math.min(100, Math.max(0, (raw+15.478)/8.875*100)));
+  t.level = t.en < 35 ? "Thấp" : t.en < 70 ? "Trung bình" : "Cao";
+  if(CUR_TAB === "music"){
+    t.moods = TAG_RULES.filter(r=>r.when(t)).map(r=>r.tag);
+  }
+}
+
+let anTotal=0, anDone=0;
+if(window.musicAPI) window.musicAPI.onAnalysis(o => {
+  const t = TRACKS_MUSIC.find(x => full(x, "music").toLowerCase() === o.path.toLowerCase()) || 
+            TRACKS_SFX.find(x => full(x, "sfx").toLowerCase() === o.path.toLowerCase());
+  if(!t) return;
+  if(o.ok){
+    t.bpm = o.bpm; t.rms = o.rms; t.cen = o.cen;
+    if(o.highlight != null) t.highlight = o.highlight;
+    applyClass(t);
+  } else {
+    t.level = "Lỗi phân tích";
+    t.note = o.error;
+  }
+  anDone++;
+  toast(`Đang phân tích: ${anDone}/${anTotal}`, true);
+  persist();
+  render();
+});
+
+async function analyzeFiles(paths){
+  anTotal = paths.length; anDone = 0;
+  toast(`Đã thêm ${paths.length} file mới. Đang phân tích BPM & năng lượng…`, true);
+  const r = await window.musicAPI.analyze(paths);
+  toast(r.ok ? `Xong: đã phân tích ${anDone}/${anTotal} file mới.` : r.error, r.ok);
+}
+
+$("#scan").onclick = async () => {
+  if(!window.musicAPI){ toast("Chỉ dùng được khi mở trong DaVinci Resolve."); return; }
+  const isSfx = (CUR_TAB === "sfx");
+  const root = isSfx ? ROOT_SFX : ROOT_MUSIC;
+  const list = getActiveList();
+  
+  toast(`Đang quét thư mục ${isSfx ? 'SFX' : 'nhạc'}…`, true);
+  const r = await window.musicAPI.scan(root, list.map(t=>full(t, CUR_TAB)));
+  if(!r.ok){ toast(r.error); return; }
+  if(!r.files || !r.files.length){ toast("Không có file mới nào trong thư mục.", true); return; }
+
+  for(const f of r.files){
+    const d = Math.round((await getDur(f.path))*10)/10;
+    const item = {
+      rel: toRel(f.path, root),
+      title: f.title,
+      ext: f.ext,
+      dur: d,
+      bpm: null,
+      en: 0,
+      level: "Chưa phân tích",
+      moods: [],
+      isNew: true,
+      fav: false,
+      tags: isSfx ? detectSfxTags(f.title) : [],
+      added: Date.now(),
+      highlight: null
+    };
+    list.push(item);
+    prepTracks(list);
+    render();
+  }
+  persist();
+  analyzeFiles(r.files.map(f=>f.path));
+};
+
+let delIdx = -1;
+const showRoot = () => {
+  const isSfx = (CUR_TAB === "sfx");
+  const root = isSfx ? ROOT_SFX : ROOT_MUSIC;
+  $("#pick").textContent = "📁 " + root;
+  $("#scan").textContent = isSfx ? "⟳ Quét thư mục SFX" : "⟳ Quét thư mục nhạc";
+  $("#addAll").textContent = isSfx ? "+ Thêm tất cả SFX vào Media Pool" : "+ Thêm tất cả bài vào Media Pool";
+};
+
+async function checkRoot(){
+  if(!window.musicAPI) return;
+  const root = (CUR_TAB === "sfx") ? ROOT_SFX : ROOT_MUSIC;
+  const ok = await window.musicAPI.dirExists(root);
+  const w = $("#warn");
+  w.style.display = ok ? "none" : "block";
+  w.textContent = `Không tìm thấy thư mục ${CUR_TAB==='sfx'?'SFX':'nhạc'} (${root}). Bấm nút 📁 để chọn lại.`;
+}
+
+function removeTrack(i){
+  const S = getActiveState();
+  const list = getActiveList();
+  if(S.cur === i){
+    au.pause(); au.removeAttribute("src");
+    PLAYING = null; WAVE.peaks = null; drawWave(); updateIO();
+    S.cur = -1;
+    $("#np").firstChild.nodeValue = "Chọn một bài để nghe";
+    $("#np small").textContent = "";
+  } else if(S.cur > i) S.cur--;
+  list.splice(i, 1);
+  prepTracks(list);
+  persist();
+  render();
+}
+
+$("#dno").onclick = () => $("#dlg").style.display = "none";
+$("#dpanel").onclick = () => {
+  $("#dlg").style.display = "none";
+  removeTrack(delIdx);
+  toast("Đã xóa khỏi panel (file vẫn còn trên ổ cứng).", true);
+};
+$("#ddisk").onclick = async () => {
+  $("#dlg").style.display = "none";
+  const list = getActiveList();
+  const r = await window.musicAPI.trash(full(list[delIdx], CUR_TAB));
+  if(r.ok){
+    removeTrack(delIdx);
+    toast("Đã chuyển file vào Thùng rác và xóa khỏi panel.", true);
+  } else toast(r.error);
+};
+
+$("#pick").onclick = async () => {
+  if(!window.musicAPI){ toast("Chỉ dùng được khi mở trong DaVinci Resolve."); return; }
+  const isSfx = (CUR_TAB === "sfx");
+  const p = await window.musicAPI.pickFolder(isSfx ? "Chọn thư mục Sound Effects (SFX)" : "Chọn thư mục nhạc (Music)");
+  if(!p) return;
+  if(isSfx){ ROOT_SFX = p; } else { ROOT_MUSIC = p; }
+  showRoot();
+  await persist();
+  checkRoot();
+  toast(`Đã đặt thư mục ${isSfx?'SFX':'nhạc'}: ${p}`, true);
+};
+
+// ---- Cây thư mục SFX, In/Out, sóng âm
+function dirOf(rel){ if(!rel || /^[A-Za-z]:/.test(rel) || rel.startsWith("/")) return ""; const a=rel.replace(/\\/g,"/").split("/"); a.pop(); return a.join("/"); }
+const fmtT = s => { s=Math.max(0,+s||0); const m=Math.floor(s/60); return m+":"+(s-m*60).toFixed(1).padStart(4,"0"); };
+const entryOf = t => ({path: full(t, CUR_TAB), sub: dirOf(t.rel), inT: t.inT ?? null, outT: t.outT ?? null, dur: t.dur || 0});
+
+function renderTree(){
+  const el=$("#tree"); if(!el) return;
+  const root={name:"Tất cả SFX", path:"", kids:new Map(), count:0};
+  TRACKS_SFX.forEach(t=>{
+    let n=root; n.count++;
+    const d=dirOf(t.rel);
+    if(d) d.split("/").forEach((seg,i,a)=>{
+      if(!n.kids.has(seg)) n.kids.set(seg,{name:seg, path:a.slice(0,i+1).join("/"), kids:new Map(), count:0});
+      n=n.kids.get(seg); n.count++;
+    });
+  });
+  const html=(n,top)=>{
+    const kids=[...n.kids.values()].sort((a,b)=>a.name.localeCompare(b.name,"vi"));
+    const open=top||SS.open.has(n.path);
+    return `<div class="tr-row${SS.dir===n.path?" on":""}" data-p="${esc(n.path)}"><span class="tr-arr" data-tg="1">${kids.length?(open?"▾":"▸"):""}</span><span class="tr-nm">${top?"📁 ":""}${esc(n.name)}</span><span class="tr-ct">${n.count}</span></div>`
+      + (kids.length && open ? `<div class="tr-kids">${kids.map(k=>html(k,false)).join("")}</div>` : "");
+  };
+  el.innerHTML=html(root,true);
+}
+$("#tree").onclick = e => {
+  const row=e.target.closest(".tr-row"); if(!row) return;
+  const p=row.dataset.p;
+  if(e.target.closest("[data-tg]") && p){ SS.open.has(p) ? SS.open.delete(p) : SS.open.add(p); }
+  else { SS.dir=p; if(p) SS.open.add(p); }
+  render();
+};
+
+const peaksCache = new Map();
+function drawWave(){
+  const cv=$("#wave"); if(!cv) return;
+  const w=cv.clientWidth, h=cv.clientHeight, dpr=window.devicePixelRatio||1;
+  if(!w) return;
+  if(cv.width!==Math.round(w*dpr) || cv.height!==Math.round(h*dpr)){ cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr); }
+  const g=cv.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,w,h);
+  const cs=getComputedStyle(document.documentElement), ac=cs.getPropertyValue("--ac").trim(), mu=cs.getPropertyValue("--mu").trim();
+  const dur=au.duration || (PLAYING && PLAYING.t.dur) || 0, pk=WAVE.peaks;
+  if(!pk){ g.fillStyle=mu; g.font="12px sans-serif"; g.fillText(PLAYING ? (WAVE.loading ? "Đang tạo sóng âm…" : "Không tạo được sóng âm cho file này") : "Chọn một bài để xem sóng âm", 12, h/2+4); return; }
+  const prog=dur ? au.currentTime/dur : 0, n=pk.length, bw=w/n;
+  for(let i=0;i<n;i++){
+    const played=(i/n)<=prog, a=Math.max(1,pk[i]*(h-6));
+    g.globalAlpha=1; g.fillStyle=played?"#cfcfcf":"#6b6b6b"; g.fillRect(i*bw,(h-a)/2,Math.max(1,bw-0.6),a);
+  }
+  g.globalAlpha=1;
+  const t=PLAYING && PLAYING.t;
+  if(t && dur && (t.inT!=null || t.outT!=null)){
+    const x1=(t.inT||0)/dur*w, x2=(t.outT!=null ? t.outT : dur)/dur*w;
+    g.fillStyle="rgba(90,141,214,.28)"; g.fillRect(x1,0,x2-x1,h);
+    g.fillStyle="#7fa8e8"; if(t.inT!=null) g.fillRect(x1,0,2,h); if(t.outT!=null) g.fillRect(x2-2,0,2,h);
+  }
+  g.fillStyle="#e5483f"; g.fillRect(prog*w-1,0,2,h);
+}
+async function loadWave(p){
+  WAVE.key=p; WAVE.peaks=peaksCache.get(p)||null; WAVE.loading=!WAVE.peaks; drawWave();
+  if(WAVE.peaks || !window.musicAPI) return;
+  try{
+    const r=await window.musicAPI.readFile(p);
+    if(!r || !r.ok){ if(WAVE.key===p){ WAVE.loading=false; drawWave(); } return; }
+    const ac=new (window.AudioContext||window.webkitAudioContext)();
+    const u=r.data, ab=await ac.decodeAudioData(u.buffer.slice(u.byteOffset, u.byteOffset+u.byteLength));
+    ac.close();
+    const ch=ab.getChannelData(0), N=1000, step=Math.max(1,Math.floor(ch.length/N)), skip=Math.max(1,(step/32)|0), pk=new Float32Array(N);
+    let mx=0.0001;
+    for(let i=0;i<N;i++){ let m=0; const e=Math.min(ch.length,(i+1)*step); for(let j=i*step;j<e;j+=skip){ const v=Math.abs(ch[j]); if(v>m) m=v; } pk[i]=m; if(m>mx) mx=m; }
+    for(let i=0;i<N;i++) pk[i]/=mx;
+    peaksCache.set(p,pk); if(peaksCache.size>25) peaksCache.delete(peaksCache.keys().next().value);
+    if(WAVE.key===p){ WAVE.peaks=pk; WAVE.loading=false; drawWave(); }
+  }catch(e){ if(WAVE.key===p){ WAVE.loading=false; drawWave(); } }
+}
+$("#wave").onclick = e => { const r=e.currentTarget.getBoundingClientRect(); if(au.duration) au.currentTime=(e.clientX-r.left)/r.width*au.duration; };
+window.addEventListener("resize", drawWave);
+
+function updateIO(){
+  const t=PLAYING && PLAYING.t, el=$("#io");
+  if(!t || (t.inT==null && t.outT==null)){ el.textContent=""; return; }
+  const a=t.inT||0, b=t.outT!=null ? t.outT : (au.duration||t.dur||0);
+  el.textContent="In "+fmtT(a)+" · Out "+(t.outT!=null?fmtT(t.outT):"hết")+" · dài "+fmtT(Math.max(0,b-a));
+}
+function setIO(kind){
+  const t=PLAYING && PLAYING.t;
+  if(!t){ toast("Hãy mở một bài trước rồi bấm In/Out."); return; }
+  const now=Math.round(au.currentTime*10)/10;
+  if(kind==="in"){ t.inT=now; if(t.outT!=null && t.outT<=now) t.outT=null; }
+  else { t.outT=now; if(t.inT!=null && t.inT>=now) t.inT=null; }
+  persist(); updateIO(); drawWave(); render();
+}
+$("#btnIn").onclick=()=>setIO("in"); $("#btnOut").onclick=()=>setIO("out");
+$("#btnClr").onclick=()=>{ const t=PLAYING && PLAYING.t; if(!t) return; t.inT=null; t.outT=null; persist(); updateIO(); drawWave(); render(); };
+document.addEventListener("keydown", e => {
+  if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  if(e.key==="i"||e.key==="I") setIO("in"); else if(e.key==="o"||e.key==="O") setIO("out");
+});
+
+
+// ================= TAB AUDIO SYNC =================
+let SY = {refs:[], cams:[], rows:[], busy:false};
+const syName = p => p.split(/[\\/]/).pop();
+const syEsc = t => String(t==null?"":t).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function syList(el, arr){
+  el.innerHTML = arr.length ? arr.map((p,i)=>`<div title="${syEsc(p)}"><span>${syEsc(syName(p))}</span><b data-i="${i}">✕</b></div>`).join("")
+                            : '<div class="none">Chưa có file nào</div>';
+  el.querySelectorAll("b").forEach(b=>b.onclick=()=>{ arr.splice(+b.dataset.i,1); syRender(); });
+}
+function syLog(m){ const l=$("#syLog"); l.textContent += m+"\n"; l.scrollTop=l.scrollHeight; }
+function stCls(s){ return s==="OK"?"ok": s.indexOf("đồng hồ")>=0?"okc": s==="KIỂM TRA"?"chk": s==="ƯỚC LƯỢNG"?"est":"fail"; }
+function syRender(){
+  syList($("#syRefs"), SY.refs); syList($("#syCams"), SY.cams);
+  $("#syRows").innerHTML = SY.rows.map(r=>`<tr><td title="${syEsc(r.path)}">${syEsc(r.name)}</td><td>${r.ref?syEsc(syName(r.ref)):""}</td><td>${syEsc(r.tc||"")}</td><td><span class="st ${stCls(r.status)}">${syEsc(r.status)}</span></td><td>${r.drift_ms==null?"":Number(r.drift_ms).toFixed(1)}</td><td title="${syEsc(r.note)}">${syEsc(r.note)}</td></tr>`).join("");
+  const ok = SY.rows.some(r=>r.offset!=null && r.ref);
+  $("#syApply").disabled = !ok || SY.busy; $("#syCsv").disabled = !SY.rows.length;
+  $("#syGo").disabled = SY.busy; $("#syStop").disabled = !SY.busy;
+}
+function syAdd(arr, paths){ for(const p of paths) if(!arr.includes(p)) arr.push(p); syRender(); }
+$("#syAddRef").onclick = async()=>{ if(window.musicAPI) syAdd(SY.refs, await musicAPI.syncPick("audio")); };
+$("#syAddCam").onclick = async()=>{ if(window.musicAPI) syAdd(SY.cams, await musicAPI.syncPick("video")); };
+$("#syClrRef").onclick = ()=>{ SY.refs=[]; syRender(); };
+$("#syClrCam").onclick = ()=>{ SY.cams=[]; syRender(); };
+$("#syFromPool").onclick = async()=>{
+  if(!window.musicAPI) return;
+  const r = await musicAPI.syncSelected();
+  if(!r.ok) return toast(r.error, false);
+  syAdd(SY.cams, r.paths); toast("Đã lấy "+r.paths.length+" clip từ Media Pool", true);
+};
+$("#syGo").onclick = async()=>{
+  if(!window.musicAPI) return;
+  if(!SY.refs.length) return toast("Chưa chọn file Audio Sync (tiếng chuẩn)", false);
+  if(!SY.cams.length) return toast("Chưa chọn clip máy quay", false);
+  SY.busy=true; SY.rows=[]; $("#syLog").textContent=""; $("#syNote").textContent=""; $("#syBar i").style.width="0"; syRender();
+  const r = await musicAPI.syncRun({refs:SY.refs, cams:SY.cams, window:+$("#syWin").value||180, ratio:+$("#syRatio").value||1.5, drift:$("#syDrift").checked});
+  SY.busy=false;
+  if(r.cancelled){ $("#syMsg").textContent="Đã dừng"; }
+  else if(!r.ok){ toast(r.error||"Lỗi phân tích", false); syLog(r.error||""); $("#syMsg").textContent="Lỗi"; }
+  syRender();
+};
+$("#syStop").onclick = ()=>{ if(window.musicAPI) musicAPI.syncCancel(); };
+$("#syApply").onclick = async()=>{
+  const d=new Date(), z=n=>String(n).padStart(2,"0");
+  $("#syApply").disabled=true; $("#syNote").textContent="Đang tạo timeline…";
+  const r = await musicAPI.syncApply({rows:SY.rows, keepCamAudio:$("#syKeep").checked,
+    stamp:`${d.getFullYear()}${z(d.getMonth()+1)}${z(d.getDate())}_${z(d.getHours())}${z(d.getMinutes())}${z(d.getSeconds())}`});
+  $("#syNote").textContent = r.ok ? (r.note||"Xong") : "";
+  toast(r.ok ? "Đã tạo timeline: "+(r.note||"") : r.error, !!r.ok); syRender();
+};
+$("#syCsv").onclick = async()=>{ const r = await musicAPI.syncCsv(SY.rows); if(r.ok) toast("Đã lưu: "+r.file, true); else if(!r.cancelled) toast(r.error||"Không lưu được", false); };
+if(window.musicAPI) musicAPI.onSync(o=>{
+  if(o.type==="progress"){ $("#syBar i").style.width=Math.round(o.f*100)+"%"; $("#syMsg").textContent=o.msg; }
+  else if(o.type==="log") syLog(o.msg);
+  else if(o.type==="error"){ syLog("LỖI: "+o.msg); toast(o.msg,false); }
+  else if(o.type==="result"){ SY.rows.push(o); }
+  else if(o.type==="done"){ $("#syMsg").textContent="Xong"; const n=SY.rows.filter(r=>r.offset!=null&&/^OK/.test(r.status)).length; $("#syNote").textContent=`${n}/${SY.rows.length} clip sync chắc chắn`; syRender(); }
+});
+let SYNC_ON = false;
+function applySyncMode(){
+  document.querySelector("main").classList.toggle("sync", SYNC_ON);
+  document.querySelector("footer").style.display = SYNC_ON ? "none" : "";
+  $("#q").style.visibility = $("#count").style.visibility = SYNC_ON ? "hidden" : "visible";
+  $("#tabSync").classList.toggle("on", SYNC_ON);
+  if(SYNC_ON){ $("#tabMusic").classList.remove("on"); $("#tabSfx").classList.remove("on"); try{au.pause();}catch(e){} }
+}
+syRender();
+
+// Switch Tabs
+function setTab(tab){
+  if(tab === "sync"){ SYNC_ON = true; applySyncMode(); return; }
+  const wasSync = SYNC_ON; SYNC_ON = false; applySyncMode();
+  if(CUR_TAB === tab && !wasSync) return;
+  CUR_TAB = tab;
+  $("#tabMusic").classList.toggle("on", tab === "music");
+  $("#tabSfx").classList.toggle("on", tab === "sfx");
+  $("#filterMusic").style.display = (tab === "music") ? "block" : "none";
+  $("#filterSfx").style.display = (tab === "sfx") ? "block" : "none";
+  $("#q").placeholder = (tab === "music") ? "Tìm theo tên bài, tag…" : "Tìm SFX (whoosh, hit, transition, foley…)";
+  
+  // Cap nhat chips ext theo tab
+  const list = getActiveList();
+  chips(tab==="music"?$("#fExt"):$("#fSfxExt"), [...new Set(list.map(t=>t.ext).filter(Boolean))], tab==="music"?SM.ex:SS.ex);
+  
+  showRoot();
+  checkRoot();
+  render();
+}
+
+$("#tabMusic").onclick = () => setTab("music");
+$("#tabSfx").onclick = () => setTab("sfx");
+$("#tabSync").onclick = () => setTab("sync");
+
+(async () => {
+  showRoot();
+  render();
+  if(window.musicAPI){
+    const lib = await window.musicAPI.loadLibrary();
+    if(lib){
+      if(lib.version >= 2){
+        if(lib.tracks && lib.tracks.length) TRACKS_MUSIC = lib.tracks;
+        ROOT_MUSIC = lib.root || ROOT_MUSIC;
+        if(lib.sfxRoot) ROOT_SFX = lib.sfxRoot;
+        if(lib.sfxTracks) TRACKS_SFX = lib.sfxTracks;
+      } else if(Array.isArray(lib) && lib.length){
+        TRACKS_MUSIC = conv(lib, ROOT_MUSIC);
+      }
+    }
+    
+    prepTracks(TRACKS_MUSIC);
+    prepTracks(TRACKS_SFX);
+    chips($("#fExt"), [...new Set(TRACKS_MUSIC.map(t=>t.ext).filter(Boolean))], SM.ex);
+    chips($("#fSfxExt"), [...new Set(TRACKS_SFX.map(t=>t.ext).filter(Boolean))], SS.ex);
+
+    await persist();
+    showRoot();
+    checkRoot();
+    render();
+  }
+})();
+
+</script>
+</body>
+</html>

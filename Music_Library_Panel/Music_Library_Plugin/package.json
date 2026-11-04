@@ -1,0 +1,7 @@
+{
+    "name": "music-library-plugin",
+    "version": "1.0.0",
+    "description": "Music Library panel for DaVinci Resolve",
+    "main": "main.js",
+    "scripts": { "start": "electron ." }
+}
