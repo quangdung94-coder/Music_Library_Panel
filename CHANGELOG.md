@@ -16,7 +16,9 @@
 - Đã thử bằng giả lập Resolve với Tiệc tối + 07_audio: 6 bản ghi / 12 file nhận đúng cặp; 3 bản ghi khớp (0262, 0263, 0264),
   3 bản không khớp (0259, 0260, 0261: không có cặp nào đạt ngưỡng); xanh lá 41 → 76; 101 đoạn Recorder ở A3, A4 trùng vị trí A3;
   0 khoảng trống, 0 cụm lệch, 0 đoạn Recorder lấn ra ngoài. Tắt Gap lại: 3 file nguyên, 0 cụm lệch.
-- CHƯA bấm thử phần Recorder trong panel trên Resolve thật.
+- Đã thử trên Resolve thật (anh dựng `multicam_02_Sync Cam` bằng panel): 417 clip 76/45/296 đúng từng clip so với phân tích,
+  A3 "Recorder" 101 đoạn Teal, 113,6 phút, 0 khoảng trống, 0 đoạn Recorder lấn ra ngoài; 68 chỗ video và Recorder phát cùng lúc
+  lệch 0 frame (52) hoặc 1 frame (16). Chưa thử ô "Kèm bản -12dB" (A4) trên Resolve thật.
 
 ## 08/11/2026 – Multicam Sync trong tab Audio Sync
 - Tab Audio Sync có 2 chế độ: "Recorder → máy quay" (chức năng cũ, đổi tên) và "Nhiều máy quay" (mới).
