@@ -9,7 +9,8 @@
 
 2. CÁCH CÀI NHANH
 -----------------
-- Giải nén file Music_Library_Panel_v1.zip trước, đừng chạy trực tiếp trong file zip.
+- Giải nén file Music_Library_Panel_v3.zip (hoặc Music_Library_Panel_v3_ban_sach.zip) trước, đừng chạy trực tiếp trong file zip.
+  Bản v3 đầy đủ có sẵn danh sách nhạc của máy chính; bản sạch thì danh sách trống, dùng cho máy khác.
 - Windows: bấm đúp install_windows.bat, bấm Yes khi Windows hỏi quyền quản trị.
 - Mac: bấm chuột phải install_mac.command, chọn Open, nhập mật khẩu máy Mac
   (gõ mật khẩu sẽ không thấy chữ hiện ra, đó là bình thường).
@@ -20,8 +21,8 @@
 - Windows: C:\ProgramData\Blackmagic Design\DaVinci Resolve\Support\Workflow Integration Plugins\Music_Library_Plugin
 - Mac:     /Library/Application Support/Blackmagic Design/DaVinci Resolve/Workflow Integration Plugins/Music_Library_Plugin
 - Nếu chưa có thư mục "Workflow Integration Plugins" thì tự tạo mới đúng tên đó.
-- Thư mục Music_Library_Plugin phải có đủ 9 file: manifest.xml, package.json, main.js, preload.js,
-  index.html, analyze_music.py, sync_runner.py, sync_engine.py và WorkflowIntegration.node.
+- Thư mục Music_Library_Plugin phải có đủ 10 file: manifest.xml, package.json, main.js, preload.js,
+  index.html, analyze_music.py, sync_runner.py, sync_engine.py, multicam_sync.py và WorkflowIntegration.node.
   File WorkflowIntegration.node KHÔNG chép từ máy khác sang, phải lấy từ thư mục SamplePlugin của chính máy đó
   (trong Resolve: Help > Documentation > Developer > Workflow Integrations > Examples > SamplePlugin).
   File cài tự động đã làm bước này giúp bạn.
@@ -46,10 +47,11 @@
 
 6. PHÂN TÍCH BPM TỰ ĐỘNG (KHÔNG BẮT BUỘC)
 -----------------------------------------
-- Cần cài Python và thư viện librosa. Không cài thì panel vẫn chạy, chỉ là file mới quét chưa có BPM.
+- Cần cài Python và thư viện (cài một lần, dùng chung cho BPM và tab Audio Sync).
+  Không cài thì tab Nhạc/SFX vẫn chạy, chỉ là file mới quét chưa có BPM và tab Audio Sync không chạy.
 - Windows: cài Python từ python.org, nhớ TÍCH ô "Add python.exe to PATH".
-  Rồi mở Command Prompt, gõ:  pip install librosa
-- Mac: cài Python từ python.org (.pkg). Rồi mở Terminal, gõ:  python3 -m pip install librosa
+  Rồi mở Command Prompt, gõ:  pip install librosa numpy imageio-ffmpeg
+- Mac: cài Python từ python.org (.pkg). Rồi mở Terminal, gõ:  python3 -m pip install librosa numpy imageio-ffmpeg
 - Nếu Python nằm ở chỗ khác: tạo file Documents/MusicPanel/python_path.txt chỉ chứa
   đường dẫn tới file python (một dòng duy nhất).
 - File .aac cần cài thêm ffmpeg mới phân tích được, nếu không sẽ báo "Lỗi phân tích".
@@ -95,7 +97,8 @@
 
 11. TAB AUDIO SYNC
 ------------------
-- Cài một lần: pip install numpy imageio-ffmpeg   (Mac: python3 -m pip install numpy imageio-ffmpeg)
+- Cần Python + thư viện ở mục 6 (pip install librosa numpy imageio-ffmpeg).
+- Giao diện gọi máy ghi âm rời là "Recorder" (máy nào cũng được), không ghi tên hãng máy.
 - Đầu tab có 2 chế độ:
   "Recorder → máy quay": ghép file máy ghi âm rời (Recorder, máy nào cũng được) vào clip máy quay.
     Chọn file Recorder > chọn clip máy quay > Phân tích > Tạo timeline.

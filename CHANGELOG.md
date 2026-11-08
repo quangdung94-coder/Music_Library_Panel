@@ -1,5 +1,17 @@
 # Nhật ký thay đổi
 
+## 08/11/2026 (tối) – Đóng gói bản v3
+- Tạo 2 bản zip từ code hiện tại, lưu ở `E:\Kho dữ liệu\Tài nguyên\` (KHÔNG đưa vào repo):
+  - `Music_Library_Panel_v3.zip`: bản đầy đủ, giữ sẵn danh sách 227 bài (biến `SEED` trong `index.html`, giống bản v2 đầy đủ).
+  - `Music_Library_Panel_v3_ban_sach.zip`: danh sách nhạc trống (`const SEED = [];`), dùng cho máy khác.
+  - Mỗi bản 13 file: thư mục `Music_Library_Plugin` (9 file, có `multicam_sync.py`) + 2 file cài + 2 file hướng dẫn.
+    Không có `WorkflowIntegration.node`, `library.json`, `python_path.txt`, `__pycache__`.
+    `install_mac.command` giữ xuống dòng LF và quyền chạy.
+  - Đã giải nén thử cả 2 bản: đủ file, không có file cấm, 12 file giống hệt repo, zip không lỗi.
+- README_CAI_DAT.txt và LUU_Y_KHI_CAI_PANEL.txt: thêm phần chế độ "Nhiều máy quay" + Recorder (A3, bản -12dB ở A4),
+  thư viện Python gộp một lệnh `pip install librosa numpy imageio-ffmpeg`, thư mục plugin giờ có 10 file,
+  gọi máy ghi âm rời là "Recorder".
+
 ## 08/11/2026 (chiều) – Nhiều file Recorder, đặt ở A3
 - Đã kiểm tra timeline anh dựng bằng panel trên Resolve thật (`multicam_01_Sync Cam`): 222/222 clip trùng vị trí
   từng frame với timeline 08/11, cùng màu, cùng độ dài, 0 khoảng trống.
