@@ -164,12 +164,17 @@ def conf_of(c, k, best):
     return "lime"
 
 
-def row(c, conf, rec, cluster, best):
+def row(c, conf, rec, cluster, best, piece=None):
+    """piece = (giay bat dau trong file, do dai): chi dung cho doan cat tu file Recorder."""
     r = best[c]
-    return {"cam": c.cam, "path": c.path, "name": c.name, "num": c.num, "dur": round(c.dur, 3),
-            "cluster": cluster, "rec": round(rec, 4), "conf": conf,
-            "score": round(r["score"], 3) if r else None,
-            "ratio": round(r["ratio"], 2) if r else None, "note": c.err}
+    d = {"cam": c.cam, "path": c.path, "name": c.name, "num": c.num, "dur": round(c.dur, 3),
+         "cluster": cluster, "rec": round(rec, 4), "conf": conf,
+         "score": round(r["score"], 3) if r else None,
+         "ratio": round(r["ratio"], 2) if r else None, "note": c.err,
+         "via_rec": bool(r and c.cam != REC_CAM and REC_CAM in r.get("cams", ()))}
+    if piece:
+        d["src_in"], d["dur"], d["file_dur"] = round(piece[0], 4), round(piece[1], 4), round(c.dur, 3)
+    return d
 
 
 def compress(items):
@@ -203,6 +208,46 @@ def compress(items):
     return outl, sum(e - s for s, e in merged)
 
 
+def gap_segments(items):
+    """Cac doan duoc giu (co may quay quay) sau khi bo khoang trong: [(dau, cuoi, dich)].
+    Vi tri moi tren timeline = vi tri cu - dich. Cung cach tinh voi compress()."""
+    items = sorted(items, key=lambda x: x[0])
+    if not items:
+        return []
+    if not CLOSE_GAPS:
+        return [(items[0][0], float("inf"), items[0][0])]
+    merged = []
+    for s, d, _ in items:
+        if merged and s <= merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], s + d)
+        else:
+            merged.append([s, s + d])
+    out, acc = [], merged[0][0]
+    for k, (s, e) in enumerate(merged):
+        if k:
+            acc += s - merged[k - 1][1]
+        out.append((s, e, acc))
+    return out
+
+
+def rec_pieces(s, d, segs):
+    """Cat file Recorder [s, s+d] theo cac doan duoc giu: [(vi tri moi, giay bat dau trong file, do dai)]."""
+    out = []
+    for a, b, sh in segs:
+        lo, hi = max(a, s), min(b, s + d)
+        if hi - lo >= 0.04:
+            out.append((lo - sh, lo - s, hi - lo))
+    return out
+
+
+def split_rec(items):
+    """Tach (start, dur, payload) cua may quay va cua Recorder. payload la Clip hoac tuple bat dau bang Clip."""
+    clip = lambda p: p[0] if isinstance(p, (tuple, list)) else p
+    vids = [x for x in items if clip(x[2]).cam != REC_CAM]
+    recs = [x for x in items if clip(x[2]).cam == REC_CAM]
+    return vids, recs
+
+
 def layout_filenum(cl_list, best, ncams):
     """Chi audio: sap cum theo so thu tu ten file, bo khoang trong."""
     key = {}
@@ -234,9 +279,14 @@ def layout_filenum(cl_list, best, ncams):
     res, t_rec = [], 0.0
     for ci, k in enumerate(cl_list):
         base = min(k.members.values())
-        placed, length = compress([(p - base, c.dur, c) for c, p in k.members.items()])
+        vids, recs = split_rec([(p - base, c.dur, c) for c, p in k.members.items()])
+        placed, length = compress(vids)
         for rec, c in placed:
             res.append(row(c, conf_of(c, k, best), t_rec + rec, ci, best))
+        segs = gap_segments(vids)
+        for s, d, c in recs:
+            for rec, src, dd in rec_pieces(s, d, segs):
+                res.append(row(c, conf_of(c, k, best), t_rec + rec, ci, best, (src, dd)))
         t_rec += length
     return res, t_rec
 
@@ -253,6 +303,8 @@ def layout_clock(cl_list, clips, best, ncams):
         o, spread = {0: 0.0}, 0.0
         ok = True
         for cam in range(1, ncams):
+            if cam == REC_CAM:          # Recorder khong co gio tin duoc: khong dung de chinh gio may
+                continue
             ds = []
             for k in multi:
                 a = [c for c in k.members if c.cam == 0 and c.ctime]
@@ -263,8 +315,6 @@ def layout_clock(cl_list, clips, best, ncams):
                         ty = y.ctime - (y.dur if h else 0)
                         ds.append((ty - tx) - (k.members[y] - k.members[x]))
             if len(ds) < 3:
-                if cam == REC_CAM:      # Recorder thieu cap: khong dung gio cua Recorder, cac may quay van chinh duoc
-                    continue
                 ok = False
                 break
             med = float(np.median(ds))
@@ -295,7 +345,8 @@ def layout_clock(cl_list, clips, best, ncams):
         withc = [clock(c) - p for c, p in mem if has_clock(c)]
         if not withc:
             for c, p in mem:
-                tail.append((c, ci))
+                if c.cam != REC_CAM:      # Recorder khong co cho dung thi bo, khong dat cuoi timeline
+                    tail.append((c, ci))
             continue
         anchor = float(np.median(withc))
         for c, p in mem:
@@ -318,8 +369,13 @@ def layout_clock(cl_list, clips, best, ncams):
                 elif a[2][2] == "yellow":
                     a[0] = b[0] - a[1]
     info["tach_khoi_cum"] = detached
-    lst, total = compress([(s, d, p) for s, d, p in placed])
+    vids, recs = split_rec([(s, d, p) for s, d, p in placed])
+    lst, total = compress(vids)
     res = [row(c, conf, rec, ci, best) for rec, (c, ci, conf) in lst]
+    segs = gap_segments(vids)
+    for s, d, (c, ci, conf) in recs:
+        for rec, src, dd in rec_pieces(s, d, segs):
+            res.append(row(c, conf, rec, ci, best, (src, dd)))
     for c, ci in tail:
         res.append(row(c, "red", total, ci, best))
         total += c.dur
@@ -386,6 +442,7 @@ def main():
         if r and r["score"] >= 0.2:
             allpairs.append([a.name, b.name, round(r["score"], 3), round(r["ratio"], 2), round(r["lag"], 3), round(r["ov"], 1)])
         if r and accept(r):
+            r["cams"] = (a.cam, b.cam)
             edges.append((a, b, r))
         if k % 500 == 0:
             out({"type": "progress", "f": round(0.6 + 0.35 * k / max(len(pairs), 1), 3),
@@ -423,6 +480,11 @@ def main():
     out({"type": "log", "msg": f"Gộp {accepted} cặp, loại {rejected} cặp sai thứ tự"})
 
     cl_list = list({id(c): c for c in clus.values()}.values())
+    # File Recorder khong khop voi clip may quay nao: bo, khong dat len timeline
+    rec_unmatched = []
+    if REC_CAM is not None:
+        rec_unmatched = sorted(c.name for k in cl_list if all(c.cam == REC_CAM for c in k.members) for c in k.members)
+        cl_list = [k for k in cl_list if any(c.cam != REC_CAM for c in k.members)]
     if cfg.get("clock_fallback"):
         res_clips, t_rec, clock_info = layout_clock(cl_list, clips, best, len(cams))
         out({"type": "log", "msg": "Đồng hồ: " + json.dumps(clock_info, ensure_ascii=False)})
@@ -431,17 +493,23 @@ def main():
         clock_info = None
     nmulti = sum(1 for k in cl_list if len(k.members) > 1)
     res_clips.sort(key=lambda r: r["rec"])
+    vrows = [r for r in res_clips if r["cam"] != REC_CAM]      # dem mau chi tinh clip may quay
     summary = {
-        "clips": total, "clusters": len(cl_list), "multi_clusters": nmulti,
-        "green": sum(1 for r in res_clips if r["conf"] == "green"),
-        "yellow": sum(1 for r in res_clips if r["conf"] == "yellow"),
-        "lime": sum(1 for r in res_clips if r["conf"] == "lime"),
-        "red": sum(1 for r in res_clips if r["conf"] == "red"),
+        "clips": len([c for c in clips if c.cam != REC_CAM]), "clusters": len(cl_list), "multi_clusters": nmulti,
+        "green": sum(1 for r in vrows if r["conf"] == "green"),
+        "yellow": sum(1 for r in vrows if r["conf"] == "yellow"),
+        "lime": sum(1 for r in vrows if r["conf"] == "lime"),
+        "red": sum(1 for r in vrows if r["conf"] == "red"),
         "total_sec": round(t_rec, 2),
     }
     summary["clock"] = clock_info
     summary["pairs_compared"] = len(pairs)
     summary["recorder_cam"] = REC_CAM
+    if REC_CAM is not None:
+        rrows = [r for r in res_clips if r["cam"] == REC_CAM]
+        summary["recorder"] = {"files": len(cfg["recorder"]), "used": len({r["path"] for r in rrows}),
+                               "pieces": len(rrows), "sec": round(sum(r["dur"] for r in rrows), 2),
+                               "unmatched": rec_unmatched, "via_rec": sum(1 for r in vrows if r["via_rec"])}
     json.dump({"cams": [c["name"] for c in cams], "summary": summary, "clips": res_clips, "pairs": allpairs},
               open(out_path, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     out({"type": "done", "summary": summary})

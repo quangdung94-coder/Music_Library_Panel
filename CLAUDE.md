@@ -48,3 +48,7 @@ Panel Workflow Integration cho DaVinci Resolve Studio: thư viện nhạc/SFX (t
 - Multicam: luôn đặt nguyên clip (`startFrame: 0`, `endFrame: Frames`), không dùng/không sửa In/Out trong Media Pool.
   `trackIndex` đặt cùng lúc Vn/An. Chia màn hình: ZoomX/ZoomY 0.5, Pan ∓rộng/4, Tilt ±cao/4; Tilt DƯƠNG = hàng TRÊN (đã thử 08/11).
   Màu: green→Green, lime→Lime, yellow→Yellow, red (xen theo tên file)→Orange.
+- Recorder trong multicam: "máy" cuối cùng (REC_CAM), không dùng giờ của nó; hàng kết quả Recorder là từng đoạn (src_in, dur).
+  File audio: `Frames` rỗng → startFrame/endFrame theo frame timeline, endFrame không tính. A(số máy+1) Teal, bản -12dB Navy.
+  mcBuild đặt máy quay trước rồi mới đặt Recorder (cắt gọn trong đoạn có máy quay, chạm đoạn trước thì cắt đầu, không đẩy lùi).
+- Bin `07_audio` của project thử: 6 bản ghi `261025_0259…0264`, mỗi bản có `S12` (thường) + `S34D12` (-12dB); 0259–0261 không khớp.

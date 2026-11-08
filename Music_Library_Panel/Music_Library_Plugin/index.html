@@ -223,7 +223,9 @@ main.sync #syncView{display:flex}
 .mc-leg span{display:flex;align-items:center;gap:5px}
 .mc-leg #mcClockInfo{margin-left:auto;color:var(--mu)}
 .sq{display:inline-block;width:10px;height:10px;border-radius:2px}
-.c-green{background:#3f9b4b}.c-lime{background:#9ccc3d}.c-yellow{background:#e5c43f}.c-red{background:#e89a4f}.c-tc{background:#3f9b4b}
+.c-green{background:#3f9b4b}.c-lime{background:#9ccc3d}.c-yellow{background:#e5c43f}.c-red{background:#e89a4f}.c-tc{background:#3f9b4b}.c-rec{background:#2f8f8f}
+.mc-low{display:flex;gap:6px;align-items:center;color:var(--mu);font-size:11px;margin-top:2px}
+.mc-low input{margin:0;accent-color:var(--ac)}
 #mcTbl{width:100%;border-collapse:collapse;font-size:12px}
 #mcTbl th{text-align:left;font-weight:500;color:var(--mu);font-size:11px;padding:5px 10px;background:#262626;position:sticky;top:0}
 #mcTbl td{padding:5px 10px;border-bottom:1px solid #262626;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -309,7 +311,7 @@ main.sync #syncView{display:flex}
   <div class="sy-cols">
     <div class="sy-box">
       <h4>1. File Recorder (tiếng chuẩn)</h4>
-      <div class="sy-btns"><button class="chip" id="syAddRef">+ Chọn file…</button><button class="chip" id="syClrRef">Xóa hết</button></div>
+      <div class="sy-btns"><button class="chip" id="syAddRef">+ Chọn file…</button><button class="chip" id="syRefBin">+ Cả bin đang mở</button><button class="chip" id="syClrRef">Xóa hết</button></div>
       <div class="sy-files" id="syRefs"></div>
     </div>
     <div class="sy-box">
@@ -381,6 +383,7 @@ main.sync #syncView{display:flex}
         <span><i class="sq c-lime"></i>Khớp audio vừa <b id="mcNL">0</b></span>
         <span><i class="sq c-yellow"></i>Theo giờ đã chỉnh <b id="mcNY">0</b></span>
         <span><i class="sq c-red"></i>Xen theo tên file <b id="mcNR">0</b></span>
+        <span id="mcRecLeg" style="display:none"><i class="sq c-rec"></i>Recorder <b id="mcNRec"></b></span>
         <span id="mcClockInfo"></span>
       </div>
       <div style="overflow:auto;max-height:360px"><table id="mcTbl"><thead><tr><th>Màu</th><th>Clip</th><th>Máy</th><th>Đoạn</th><th>Vị trí</th><th>Độ khớp</th><th>Ghi chú</th></tr></thead><tbody id="mcRows"></tbody></table></div>
@@ -1157,7 +1160,20 @@ function syRender(){
   $("#syGo").disabled = SY.busy; $("#syStop").disabled = !SY.busy;
 }
 function syAdd(arr, paths){ for(const p of paths) if(!arr.includes(p)) arr.push(p); syRender(); }
-$("#syAddRef").onclick = async()=>{ if(window.musicAPI) syAdd(SY.refs, await musicAPI.syncPick("audio")); };
+// File Recorder: chi giu ban thuong, bo ban -12dB cung lan ghi (recPair khai bao o phan Nhieu may quay)
+function syAddRefs(paths){
+  const pairs = recPair(paths), lows = pairs.filter(r=>r.low).length;
+  syAdd(SY.refs, pairs.map(r=>r.main));
+  if(lows) toast(`Bỏ ${lows} bản -12dB, chỉ dùng bản thường để phân tích`, true);
+}
+$("#syAddRef").onclick = async()=>{ if(window.musicAPI) syAddRefs(await musicAPI.syncPick("audio")); };
+$("#syRefBin").onclick = async()=>{
+  if(!window.musicAPI) return;
+  const r = await musicAPI.mcBin(); if(!r.ok) return toast(r.error);
+  const au = r.items.filter(x=>!x.video).map(x=>x.path);
+  if(!au.length) return toast("Bin " + r.bin + " không có file audio");
+  syAddRefs(au);
+};
 $("#syAddCam").onclick = async()=>{ if(window.musicAPI) syAdd(SY.cams, await musicAPI.syncPick("video")); };
 $("#syClrRef").onclick = ()=>{ SY.refs=[]; syRender(); };
 $("#syClrCam").onclick = ()=>{ SY.cams=[]; syRender(); };
@@ -1208,8 +1224,35 @@ syRender();
 // ================= AUDIO SYNC: NHIEU MAY QUAY =================
 const CAMCOL = ["#2b4d73","#6b4a8a","#2e6b5a","#7a5a2a"];
 const mcEmpty = () => ({name:"", paths:[], src:""});
-let MC = {cams:[mcEmpty(), mcEmpty()], rec:[], method:"audio", clock:true, gaps:true, split:true, rows:[], summary:null, busy:false};
+// rec: cac ban ghi Recorder [{main: ban thuong, low: ban -12dB hoac null}]
+let MC = {cams:[mcEmpty(), mcEmpty()], rec:[], recLow:false, method:"audio", clock:true, gaps:true, split:true, rows:[], summary:null, busy:false};
 const mcPrefix = p => syName(p).replace(/\.[^.]+$/,"").replace(/[\s_-]*\d+$/,"").trim();
+// Ghep cap file Recorder: "261025_0259S12.wav" (thuong) + "261025_0259S34D12.wav" (-12dB, co chu D trong hau to)
+function recPair(paths){
+  const groups = new Map(), out = [];
+  for(const p of [...new Set(paths)]){
+    const m = syName(p).replace(/\.[^.]+$/,"").match(/^(.*?\d)[_-]?(S\d*(D\d+)?)$/i);
+    if(!m){ out.push({main:p, low:null}); continue; }
+    const k = m[1].toLowerCase();
+    if(!groups.has(k)) groups.set(k, {mains:[], lows:[]});
+    (m[3] ? groups.get(k).lows : groups.get(k).mains).push(p);
+  }
+  for(const {mains, lows} of groups.values()){
+    if(!mains.length){ lows.forEach(p=>out.push({main:p, low:null})); continue; }   // chi co ban -12dB thi dung no
+    mains.forEach((p,i)=>out.push({main:p, low: i===0 ? (lows[0]||null) : null}));
+  }
+  return out.sort((a,b)=>syName(a.main).localeCompare(syName(b.main)));
+}
+function recAdd(paths){
+  const all = [...MC.rec.flatMap(r=>[r.main, r.low].filter(Boolean)), ...paths];
+  MC.rec = recPair(all);
+  mcStale();
+}
+function recSummary(){
+  const n = MC.rec.length, lows = MC.rec.filter(r=>r.low).length;
+  if(!n) return "File Recorder · không bắt buộc";
+  return `${n} bản ghi · ${n + lows} file` + (lows ? " (thường + -12dB)" : "");
+}
 function mcGuessName(paths){
   const c = {};
   for(const p of paths){ const k = mcPrefix(p); if(k) c[k] = (c[k]||0) + 1; }
@@ -1235,14 +1278,16 @@ function fmtOff(s){
   const z = n => String(n).padStart(2,"0");
   return `${sg}${Math.floor(s/3600)}:${z(Math.floor(s%3600/60))}:${z(Math.round(s%60))}`;
 }
+const mcIsRec = r => MC.summary && r.cam === MC.summary.recorder_cam;
 function mcNote(r){
+  if(mcIsRec(r)) return `Đoạn ${fmtPos(r.src_in)} – ${fmtPos(r.src_in + r.dur)} trong file (dài ${fmtPos(r.file_dur)})`;
   const ck = MC.summary && MC.summary.clock;
   const det = (ck && ck.tach_khoi_cum) || [];
   const n = r.conf==="lime" ? "Nên nghe kiểm tra"
     : r.conf==="tc" ? "Theo timecode"
     : r.conf==="yellow" ? (det.includes(r.name) ? "Audio lệch giờ quá 8 giây → tách khỏi cặp" : "Không khớp audio, đặt theo giờ đã chỉnh")
     : r.conf==="red" ? (ck && !ck.loi ? "Không có giờ máy, xếp cuối" : "Không khớp audio, xen theo số tên file") : "";
-  return [n, r.note].filter(Boolean).join(" · ");
+  return [r.via_rec ? "Khớp qua Recorder" : "", n, r.note].filter(Boolean).join(" · ");
 }
 // Doi cai dat lam ket qua cu khong con dung: xoa de bam Phan tich lai
 function mcStale(){
@@ -1258,9 +1303,10 @@ function mcRender(){
       <div class="mc-acts">${i?`<button class="chip" data-a="up" title="Đổi chỗ với Cam ${i}">↑</button>`:""}<button class="chip" data-a="sel">Clip đang chọn</button><button class="chip" data-a="bin">Cả bin</button><button class="chip" data-a="file">File…</button><button class="chip" data-a="${n>2?"del":"clr"}" aria-label="Xóa Cam ${i+1}" title="${n>2?"Bỏ máy này":"Xóa clip của máy này"}">✕</button></div>
     </div>`).join("") + `<div class="mc-row" data-i="rec">
       <span class="mc-tag rec">Recorder</span>
-      <div class="mc-info"><span style="color:#c8c8c8">File Recorder · ${MC.rec.length ? MC.rec.length+" file" : "không bắt buộc"}</span>
-        <small title="${syEsc(MC.rec.join("\n"))}">${MC.rec.length ? syEsc(MC.rec.map(syName).join(", ")) : "Có file Recorder (bất kỳ máy ghi âm nào) thì dùng làm trục chính, đặt ở track audio cuối"}</small></div>
-      <div class="mc-acts"><button class="chip" data-a="recfile">Chọn file…</button>${MC.rec.length?`<button class="chip" data-a="recclr" aria-label="Xóa file Recorder">✕</button>`:""}</div>
+      <div class="mc-info"><span style="color:#c8c8c8">${recSummary()}</span>
+        <small title="${syEsc(MC.rec.map(r=>syName(r.main) + (r.low ? " + " + syName(r.low) : "")).join("\n"))}">${MC.rec.length ? syEsc(MC.rec.map(r=>syName(r.main)).join(", ")) : "Có file Recorder (bất kỳ máy ghi âm nào) thì dùng làm trục chính, đặt ở A" + (n+1) + " màu Teal"}</small>
+        ${MC.rec.some(r=>r.low) ? `<label class="mc-low"><input type="checkbox" data-a="reclow" ${MC.recLow?"checked":""}> Kèm bản -12dB ở A${n+2} (màu Navy)</label>` : ""}</div>
+      <div class="mc-acts"><button class="chip" data-a="recsel">Clip đang chọn</button><button class="chip" data-a="recbin">Cả bin</button><button class="chip" data-a="recfile">File…</button>${MC.rec.length?`<button class="chip" data-a="recclr" aria-label="Xóa file Recorder">✕</button>`:""}</div>
     </div>`;
   $("#mcAdd").style.display = n >= 4 ? "none" : "";
   $("#mcByTc").setAttribute("aria-pressed", MC.method==="tc");
@@ -1271,7 +1317,10 @@ function mcRender(){
   $("#mcSplit").setAttribute("aria-checked", MC.split);
 
   const names = mcNames();
-  const cnt = k => MC.rows.filter(r=>r.conf===k).length;
+  const cnt = k => MC.rows.filter(r=>r.conf===k && !mcIsRec(r)).length;
+  const rs = MC.summary && MC.summary.recorder;
+  $("#mcRecLeg").style.display = rs ? "" : "none";
+  if(rs) $("#mcNRec").textContent = `${rs.pieces} đoạn từ ${rs.used}/${rs.files} bản ghi · ${rs.via_rec} clip khớp qua Recorder`;
   $("#mcNG").textContent = cnt("green") + cnt("tc");
   $("#mcNL").textContent = cnt("lime");
   $("#mcNY").textContent = cnt("yellow");
@@ -1284,8 +1333,8 @@ function mcRender(){
       }).join(" · ");
   $("#mcRows").innerHTML = MC.rows.map(r=>{
     const note = mcNote(r);
-    const camName = r.cam === (MC.summary && MC.summary.recorder_cam) ? "Recorder" : names[r.cam];
-    return `<tr><td><i class="sq c-${r.conf}"></i></td><td title="${syEsc(r.path)}" style="color:#fff">${syEsc(r.name)}</td><td>${syEsc(camName)}</td><td>${(r.cluster||0)+1}</td><td>${fmtPos(r.rec)}</td><td>${r.score!=null ? Number(r.score).toFixed(2)+" · ×"+r.ratio : "—"}</td><td title="${syEsc(note)}" style="color:var(--mu)">${syEsc(note)}</td></tr>`;
+    const camName = mcIsRec(r) ? "Recorder" : names[r.cam];
+    return `<tr><td><i class="sq c-${mcIsRec(r) ? "rec" : r.conf}"></i></td><td title="${syEsc(r.path)}" style="color:#fff">${syEsc(r.name)}</td><td>${syEsc(camName)}</td><td>${(r.cluster||0)+1}</td><td>${fmtPos(r.rec)}</td><td>${r.score!=null ? Number(r.score).toFixed(2)+" · ×"+r.ratio : "—"}</td><td title="${syEsc(note)}" style="color:var(--mu)">${syEsc(note)}</td></tr>`;
   }).join("");
   $("#mcBuild").disabled = !MC.rows.length || MC.busy;
   $("#mcCsv").disabled = !MC.rows.length;
@@ -1305,7 +1354,14 @@ $("#mcCams").onclick = async e=>{
   if(a==="clr"){ c.paths=[]; c.src=""; return mcStale(); }
   if(a==="recclr"){ MC.rec=[]; return mcStale(); }
   if(mcNeedApi()) return;
-  if(a==="recfile"){ const p = await musicAPI.syncPick("audio"); if(p.length){ MC.rec = [...new Set([...MC.rec, ...p])]; mcStale(); } return; }
+  if(a==="recfile"){ const p = await musicAPI.syncPick("audio"); if(p.length) recAdd(p); return; }
+  if(a==="recsel"){ const r = await musicAPI.syncSelected(); if(!r.ok) return toast(r.error); recAdd(r.paths); return; }
+  if(a==="recbin"){
+    const r = await musicAPI.mcBin(); if(!r.ok) return toast(r.error);
+    const au = r.items.filter(x=>!x.video).map(x=>x.path);
+    if(!au.length) return toast("Bin " + r.bin + " không có file audio");
+    recAdd(au); toast("Recorder: " + recSummary(), true); return;
+  }
   if(a==="file"){ const p = await musicAPI.syncPick("video"); if(p.length) mcSet(c, [...c.paths, ...p], c.src || "Chọn file"); return; }
   if(a==="sel"){ const r = await musicAPI.syncSelected(); if(!r.ok) return toast(r.error); mcSet(c, r.paths, "Clip đang chọn trong Media Pool"); return; }
   if(a==="bin"){
@@ -1316,6 +1372,7 @@ $("#mcCams").onclick = async e=>{
   }
 };
 $("#mcCams").onchange = e=>{
+  if(e.target.dataset.a === "reclow"){ MC.recLow = e.target.checked; return; }    // chi doi luc dung timeline, khong can phan tich lai
   if(e.target.dataset.a !== "nm") return;
   MC.cams[+e.target.closest(".mc-row").dataset.i].name = e.target.value.trim();
   mcRender();
@@ -1323,18 +1380,22 @@ $("#mcCams").onchange = e=>{
 $("#mcAdd").onclick = ()=>{ if(MC.cams.length < 4){ MC.cams.push(mcEmpty()); mcStale(); } };
 $("#mcAuto").onclick = async ()=>{
   if(mcNeedApi()) return;
-  const r = await musicAPI.mcBin(); if(!r.ok) return toast(r.error);
-  const vids = r.items.filter(x=>x.video).map(x=>x.path), auds = r.items.filter(x=>!x.video).map(x=>x.path);
+  const r = await musicAPI.mcBin({deep:true}); if(!r.ok) return toast(r.error);
+  const vitems = r.items.filter(x=>x.video), vids = vitems.map(x=>x.path), auds = r.items.filter(x=>!x.video).map(x=>x.path);
+  const subOf = new Map(vitems.map(x=>[x.path, x.sub]));
   const dir = p => p.replace(/[\\/][^\\/]*$/, "");
   const by = key => { const g = new Map(); for(const p of vids){ const k = key(p); if(!g.has(k)) g.set(k, []); g.get(k).push(p); } return [...g.values()].sort((a,b)=>b.length-a.length); };
-  let groups = by(p=>mcPrefix(p).toLowerCase());
+  // bin co cac bin con (Cam 1, Cam 2…) thi chia theo bin con; khong thi theo tien to ten file, roi theo thu muc
+  let groups = by(p=>subOf.get(p) || "");
+  if(groups.length < 2) groups = by(p=>mcPrefix(p).toLowerCase());
   if(groups.length < 2) groups = by(p=>dir(p).toLowerCase());
   if(groups.length < 2) return toast("Không tách được máy: mọi clip trong bin cùng tiền tố tên file và cùng thư mục.");
   if(groups.length > 4) toast(`Bin có ${groups.length} nhóm tên file, chỉ lấy 4 nhóm nhiều clip nhất.`);
-  MC.cams = groups.slice(0,4).map(ps=>({name: mcGuessName(ps) || syName(dir(ps[0])), paths: ps, src: "Bin " + r.binPath}));
-  if(auds.length) MC.rec = auds;
+  MC.cams = groups.slice(0,4).map(ps=>({name: mcGuessName(ps) || syName(dir(ps[0])), paths: ps,
+    src: "Bin " + r.binPath + (subOf.get(ps[0]) ? " / " + subOf.get(ps[0]) : "")}));
+  if(auds.length) MC.rec = recPair(auds);
   mcDefName(r); mcStale();
-  toast(`Đã chia ${MC.cams.length} máy${auds.length ? " + " + auds.length + " file Recorder" : ""}. Bấm ↑ để đổi máy nào là Cam 1.`, true);
+  toast(`Đã chia ${MC.cams.length} máy${auds.length ? " + Recorder " + recSummary() : ""}. Bấm ↑ để đổi máy nào là Cam 1.`, true);
 };
 $("#mcByTc").onclick = ()=>{ if(MC.method!=="tc"){ MC.method="tc"; mcStale(); } };
 $("#mcByAu").onclick = ()=>{ if(MC.method!=="audio"){ MC.method="audio"; mcStale(); } };
@@ -1351,8 +1412,8 @@ $("#mcGo").onclick = async ()=>{
   mcRender();
   const t0 = Date.now();
   const r = MC.method==="tc"
-    ? await musicAPI.mcTc({cams: MC.cams.map(c=>c.paths), recorder: MC.rec, gaps: MC.gaps})
-    : await musicAPI.mcRun({cams: MC.cams.map((c,i)=>({name: mcCamName(i), files: c.paths})), recorder: MC.rec,
+    ? await musicAPI.mcTc({cams: MC.cams.map(c=>c.paths), recorder: MC.rec.map(r=>r.main), gaps: MC.gaps})
+    : await musicAPI.mcRun({cams: MC.cams.map((c,i)=>({name: mcCamName(i), files: c.paths})), recorder: MC.rec.map(r=>r.main),
         close_gaps: MC.gaps, clock_fallback: MC.clock, workers: 4});
   MC.busy=false;
   if(r.ok){
@@ -1362,6 +1423,7 @@ $("#mcGo").onclick = async ()=>{
     $("#mcMsg").textContent = `Xong · ${s.clips} clip` + (s.pairs_compared!=null ? ` · ${s.pairs_compared.toLocaleString("vi-VN")} cặp đã so` : "")
       + ` · ${Math.round((Date.now()-t0)/1000)} giây · timeline dài ${(s.total_sec/60).toFixed(1)} phút`;
     if(s.bad && s.bad.length) mcLog("Không đọc được timecode: " + s.bad.join(", "));
+    if(s.recorder && s.recorder.unmatched.length) mcLog("File Recorder không khớp clip máy quay nào (không đặt vào timeline): " + s.recorder.unmatched.join(", "));
   } else if(r.cancelled){ $("#mcMsg").textContent="Đã dừng"; }
   else { $("#mcMsg").textContent="Lỗi"; mcLog(r.error||""); toast(r.error||"Lỗi phân tích"); }
   mcRender();
@@ -1372,8 +1434,9 @@ $("#mcBuild").onclick = async ()=>{
   if(!name) return toast("Chưa đặt tên timeline.");
   $("#mcBuild").disabled=true; $("#mcNote").textContent="Đang tạo timeline…";
   const r = await musicAPI.mcBuild({
-    rows: MC.rows.map(x=>({cam:x.cam, path:x.path, rec:x.rec, dur:x.dur, conf:x.conf, cluster:x.cluster})),
+    rows: MC.rows.map(x=>({cam:x.cam, path:x.path, rec:x.rec, dur:x.dur, src_in:x.src_in, conf:x.conf, cluster:x.cluster})),
     camNames: MC.cams.map((c,i)=>mcCamName(i)), hasRec: MC.summary.recorder_cam!=null,
+    withLow: MC.recLow, recLow: Object.fromEntries(MC.rec.filter(r=>r.low).map(r=>[r.main, r.low])),
     split: MC.split, gaps: MC.gaps, name, bin: $("#mcBin").value.trim()});
   $("#mcNote").textContent = r.ok ? "Đã tạo " + r.name + ": " + r.note : "";
   toast(r.ok ? "Đã tạo timeline " + r.name : r.error, !!r.ok);

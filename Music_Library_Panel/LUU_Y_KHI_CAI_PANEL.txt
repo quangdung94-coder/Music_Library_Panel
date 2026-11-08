@@ -115,3 +115,13 @@
 - Màu clip: xanh lá = khớp audio chắc, xanh nhạt = khớp vừa (nên nghe lại), vàng = theo giờ đã chỉnh, cam = xen theo tên file.
 - Tên timeline không được trùng timeline đã có (panel báo lỗi, không ghi đè). Timeline đặt trong bin 03_timeline nếu có.
 - Panel đặt nguyên clip lên timeline, KHÔNG dùng và KHÔNG sửa điểm In/Out bạn đã đánh trong Media Pool.
+- Bin có các bin con (ví dụ 02_Sync Cam / Cam 1, Cam 2): "Tự chia theo tên file" chia máy theo bin con.
+- Hàng Recorder nhận NHIỀU file: "Cả bin" (ví dụ bin 07_audio), "Clip đang chọn" hoặc "File…".
+  Panel tự ghép cặp bản thường và bản -12dB của cùng một lần ghi
+  (ví dụ 261025_0259S12.wav = bản thường, 261025_0259S34D12.wav = bản -12dB), chỉ phân tích bản thường.
+- Recorder đặt ở track audio ngay sau các máy quay (2 máy: A3), màu Teal. Tick "Kèm bản -12dB" thì bản -12dB
+  đặt cùng vị trí ở A4, màu Navy.
+- Bật Gap lại: Recorder bị cắt theo đúng các đoạn có máy quay, phần nằm trong khoảng trống đã bỏ không đặt vào.
+  Tắt Gap lại: đặt nguyên file Recorder.
+- File Recorder không khớp clip máy quay nào (ví dụ ghi trước giờ làm lễ) thì không đặt vào timeline; xem dòng báo ở cuối tab.
+- Chế độ "Recorder → máy quay" cũng nhận nhiều file / cả bin và tự bỏ bản -12dB.

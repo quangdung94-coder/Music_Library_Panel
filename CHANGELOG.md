@@ -1,5 +1,23 @@
 # Nhật ký thay đổi
 
+## 08/11/2026 (chiều) – Nhiều file Recorder, đặt ở A3
+- Đã kiểm tra timeline anh dựng bằng panel trên Resolve thật (`multicam_01_Sync Cam`): 222/222 clip trùng vị trí
+  từng frame với timeline 08/11, cùng màu, cùng độ dài, 0 khoảng trống.
+- Hàng Recorder nhận nhiều file (Cả bin / Clip đang chọn / File…), tự ghép cặp bản thường `…S12` và bản -12dB `…S34D12`;
+  chỉ phân tích bản thường. Chế độ "Recorder → máy quay" cũng nhận cả bin và tự bỏ bản -12dB.
+- `multicam_sync.py`: Recorder là một "máy" chỉ có audio. Không dùng giờ của Recorder để chỉnh giờ máy (kết quả máy quay
+  không đổi khi không có Recorder: chạy lại 2 buổi vẫn y hệt 08/11). Recorder không khớp clip nào thì bỏ.
+  Bật Gap lại: Recorder bị cắt theo các đoạn có máy quay (trả về từng đoạn: giây bắt đầu trong file + độ dài).
+  Bảng kết quả ghi clip nào "Khớp qua Recorder".
+- Dựng timeline: Recorder ở A(số máy + 1) màu Teal, tùy chọn bản -12dB ở track kế tiếp màu Navy. File audio có Frames rỗng:
+  startFrame/endFrame tính theo frame timeline, endFrame không tính. Đặt máy quay trước, Recorder sau; đoạn Recorder được cắt
+  gọn trong đoạn có máy quay, chạm đoạn trước thì cắt bớt đầu (không đẩy lùi) để tiếng không lệch hình.
+- "Tự chia theo tên file" chia theo bin con khi bin có bin con (Cam 1 / Cam 2).
+- Đã thử bằng giả lập Resolve với Tiệc tối + 07_audio: 6 bản ghi / 12 file nhận đúng cặp; 3 bản ghi khớp (0262, 0263, 0264),
+  3 bản không khớp (0259, 0260, 0261: không có cặp nào đạt ngưỡng); xanh lá 41 → 76; 101 đoạn Recorder ở A3, A4 trùng vị trí A3;
+  0 khoảng trống, 0 cụm lệch, 0 đoạn Recorder lấn ra ngoài. Tắt Gap lại: 3 file nguyên, 0 cụm lệch.
+- CHƯA bấm thử phần Recorder trong panel trên Resolve thật.
+
 ## 08/11/2026 – Multicam Sync trong tab Audio Sync
 - Tab Audio Sync có 2 chế độ: "Recorder → máy quay" (chức năng cũ, đổi tên) và "Nhiều máy quay" (mới).
   Giao diện không còn chữ "Tascam"; máy ghi âm rời gọi chung là "Recorder".

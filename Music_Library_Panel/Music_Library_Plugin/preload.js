@@ -22,7 +22,7 @@ contextBridge.exposeInMainWorld('musicAPI', {
     onSync: (cb) => ipcRenderer.on('sync:event', (e, o) => cb(o)),
     mcRun: (cfg) => ipcRenderer.invoke('mc:run', cfg),
     mcCancel: () => ipcRenderer.invoke('mc:cancel'),
-    mcBin: () => ipcRenderer.invoke('mc:bin'),
+    mcBin: (opts) => ipcRenderer.invoke('mc:bin', opts),
     mcTc: (payload) => ipcRenderer.invoke('mc:tc', payload),
     mcBuild: (payload) => ipcRenderer.invoke('mc:build', payload),
     mcCsv: (rows) => ipcRenderer.invoke('mc:csv', rows),

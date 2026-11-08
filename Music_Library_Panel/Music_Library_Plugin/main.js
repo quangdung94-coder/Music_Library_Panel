@@ -456,6 +456,7 @@ async function syncCsv(event, rows) {
 
 // ================= MULTICAM: NHIEU MAY QUAY =================
 const MC_COLORS = { green: 'Green', lime: 'Lime', yellow: 'Yellow', red: 'Orange', tc: 'Green' };
+const MC_REC_COLOR = 'Teal', MC_REC_LOW_COLOR = 'Navy';
 const MC_VIDEO_EXTS = ['.mp4', '.mov', '.mxf', '.mts', '.m2ts', '.avi', '.mkv', '.braw', '.r3d'];
 // Dau Tilt cua hang tren trong luoi 2x2 (+1: Tilt duong dua khung len tren). Da thu tren Resolve that.
 const MC_TILT_TOP = 1;
@@ -541,8 +542,8 @@ async function findFolderByName(folder, name) {
     return null;
 }
 
-// Lay moi clip trong bin dang mo cua Media Pool (khong lay bin con)
-async function mcBin() {
+// Lay moi clip trong bin dang mo cua Media Pool. deep = lay ca bin con (sub = duong dan bin con).
+async function mcBin(event, opts) {
     try {
         const project = await getProject();
         if (!project) return { ok: false, error: 'Chưa mở project nào trong Resolve.' };
@@ -550,10 +551,16 @@ async function mcBin() {
         const folder = await mp.GetCurrentFolder();
         if (!folder) return { ok: false, error: 'Chưa mở bin nào trong Media Pool.' };
         const items = [];
-        for (const c of ((await folder.GetClipList()) || [])) {
-            const fp = await c.GetClipProperty('File Path');
-            if (fp) items.push({ path: fp, video: MC_VIDEO_EXTS.includes(path.extname(fp).toLowerCase()) });
-        }
+        const collect = async (f, sub) => {
+            for (const c of ((await f.GetClipList()) || [])) {
+                const fp = await c.GetClipProperty('File Path');
+                if (fp) items.push({ path: fp, sub, video: MC_VIDEO_EXTS.includes(path.extname(fp).toLowerCase()) });
+            }
+            if (opts && opts.deep) {
+                for (const sf of ((await f.GetSubFolderList()) || [])) await collect(sf, (sub ? sub + '/' : '') + (await sf.GetName()));
+            }
+        };
+        await collect(folder, '');
         let trail = null;
         try { trail = await findFolderPath(await mp.GetRootFolder(), await folder.GetUniqueId(), []); } catch (e) {}
         const name = await folder.GetName();
@@ -657,8 +664,10 @@ async function mcBuild(event, p) {
         }
         const nv = p.camNames.length;
         const recCam = p.hasRec ? nv : -1;
+        const recLow = (p.hasRec && p.withLow && p.recLow) || {};      // ban thuong -> ban -12dB
+        const lowOn = Object.keys(recLow).length > 0;
         const rows = (p.rows || []).slice().sort((a, b) => a.rec - b.rec || a.cam - b.cam);
-        const { mp, idx } = await mcPoolItems(project, rows.map(r => r.path));
+        const { mp, idx } = await mcPoolItems(project, [...rows.map(r => r.path), ...Object.values(recLow)]);
 
         const prev = await mp.GetCurrentFolder();
         const dest = (p.bin && (await findFolderByName(await mp.GetRootFolder(), p.bin))) || prev;
@@ -668,7 +677,9 @@ async function mcBuild(event, p) {
         if (!tl) return { ok: false, error: 'Không tạo được timeline "' + name + '".' };
         await project.SetCurrentTimeline(tl);
 
-        const nAudio = nv + (p.hasRec ? 1 : 0);
+        // Recorder ban thuong ngay sau track audio cua may quay (2 may: A3), ban -12dB o track ke tiep (A4)
+        const recTrack = nv + 1, lowTrack = nv + 2;
+        const nAudio = nv + (p.hasRec ? 1 : 0) + (lowOn ? 1 : 0);
         while (((await tl.GetTrackCount('video')) || 0) < nv) { if (!(await tl.AddTrack('video'))) break; }
         while (((await tl.GetTrackCount('audio')) || 0) < nAudio) {
             if (!(await tl.AddTrack('audio', 'stereo')) && !(await tl.AddTrack('audio'))) break;
@@ -677,7 +688,8 @@ async function mcBuild(event, p) {
             await tl.SetTrackName('video', i + 1, p.camNames[i]);
             await tl.SetTrackName('audio', i + 1, p.camNames[i]);
         }
-        if (p.hasRec) await tl.SetTrackName('audio', nAudio, 'Recorder');
+        if (p.hasRec) await tl.SetTrackName('audio', recTrack, 'Recorder');
+        if (lowOn) await tl.SetTrackName('audio', lowTrack, 'Recorder -12dB');
 
         // vi tri khi chia man hinh: 2 may trai/phai, 3-4 may luoi 2x2
         const place = cam => {
@@ -690,48 +702,91 @@ async function mcBuild(event, p) {
         const base = (await tl.GetStartFrame()) || 0;
         const trackEnd = {}, placed = [], colors = {};
         let shift = 0, cover = base, skipped = 0, pushed = 0, closed = 0;
-        for (const r of rows) {
-            const clip = idx.get(r.path.toLowerCase());
-            if (!clip) { skipped++; continue; }
-            const isRec = r.cam === recCam;
-            const track = isRec ? nAudio : r.cam + 1;
-            const key = (isRec ? 'a' : 'v') + track;
-            let rf = base + Math.round(r.rec * fps) + shift;
-            if (p.gaps && rf > cover && rf - cover <= 2) { closed++; shift -= rf - cover; rf = cover; }
-            if (trackEnd[key] != null && rf < trackEnd[key]) { pushed++; rf = trackEnd[key]; }
-            let endFrame = parseInt(await clip.GetClipProperty('Frames'), 10);
-            if (!(endFrame > 0) || isRec) endFrame = Math.max(1, Math.round((r.dur || 1) * (isRec ? fps : (parseFloat(await clip.GetClipProperty('FPS')) || fps))));
-            const info = { mediaPoolItem: clip, startFrame: 0, endFrame, trackIndex: track, recordFrame: rf };
-            if (isRec) info.mediaType = 2;
+        // dat 1 clip (hoac 1 doan Recorder) vao track, tra ve cac TimelineItem
+        const put = async (info, key, color, isRec, cam) => {
+            if (trackEnd[key] != null && info.recordFrame < trackEnd[key]) { pushed++; info.recordFrame = trackEnd[key]; }
             const items = (await mp.AppendToTimeline([info])) || [];
-            if (!items.length) { skipped++; continue; }
-            let start = null, end = rf;
-            const color = MC_COLORS[r.conf] || 'Orange';
+            let start = null, end = info.recordFrame;
             for (const it of items) {
                 const s = await it.GetStart(), d = await it.GetDuration();
                 if (start === null || s < start) start = s;
                 end = Math.max(end, s + d);
                 await it.SetClipColor(color);
                 const tt = await it.GetTrackTypeAndIndex();
-                const tf = !isRec && tt && tt[0] === 'video' ? place(r.cam) : null;
+                const tf = !isRec && tt && tt[0] === 'video' ? place(cam) : null;
                 if (tf) for (const k of Object.keys(tf)) await it.SetProperty(k, tf[k]);
             }
-            trackEnd[key] = end;
-            cover = Math.max(cover, end);
-            colors[color] = (colors[color] || 0) + 1;
-            placed.push({ start, end, cluster: r.cluster, conf: r.conf, want: base + Math.round(r.rec * fps) });
+            if (items.length) { trackEnd[key] = end; colors[color] = (colors[color] || 0) + 1; }
+            return items.length ? { start, end } : null;
+        };
+        // Luot 1: clip may quay. Ghi lai do dich (shift) sau moi lan don khe de luot 2 dat Recorder dung cho.
+        const shifts = [[-Infinity, 0]];
+        for (const r of rows.filter(x => x.cam !== recCam)) {
+            const clip = idx.get(r.path.toLowerCase());
+            if (!clip) { skipped++; continue; }
+            const want = base + Math.round(r.rec * fps);
+            let rf = want + shift;
+            if (p.gaps && rf > cover && rf - cover <= 2) { closed++; shift -= rf - cover; rf = cover; shifts.push([want, shift]); }
+            let endFrame = parseInt(await clip.GetClipProperty('Frames'), 10);
+            if (!(endFrame > 0)) endFrame = Math.max(1, Math.round((r.dur || 1) * (parseFloat(await clip.GetClipProperty('FPS')) || fps)));
+            const info = { mediaPoolItem: clip, startFrame: 0, endFrame, trackIndex: r.cam + 1, recordFrame: rf };
+            const got = await put(info, 'v' + (r.cam + 1), MC_COLORS[r.conf] || 'Orange', false, r.cam);
+            if (!got) { skipped++; continue; }
+            cover = Math.max(cover, got.end);
+            placed.push({ start: got.start, end: got.end, cluster: r.cluster, conf: r.conf, rec: false, want, trim: 0 });
+        }
+        // Luot 2: doan Recorder, cat gon trong cac doan co may quay (khong lan sang khoang trong da bo,
+        // khong day lui doan sau: cham doan truoc thi cat bot dau doan de tieng khong lech hinh).
+        const vu = [];
+        for (const [s, t] of placed.map(x => [x.start, x.end]).sort((a, b) => a[0] - b[0])) {
+            if (vu.length && s <= vu[vu.length - 1][1]) vu[vu.length - 1][1] = Math.max(vu[vu.length - 1][1], t); else vu.push([s, t]);
+        }
+        let trimmed = 0;
+        for (const r of rows.filter(x => x.cam === recCam)) {
+            const clip = idx.get(r.path.toLowerCase());
+            if (!clip) { skipped++; continue; }
+            const want = base + Math.round(r.rec * fps);
+            const sh = shifts.filter(([w]) => w <= want).pop()[1];
+            // File audio: Frames rong; startFrame/endFrame tinh theo frame TIMELINE, endFrame khong tinh (do tren Resolve 08/11)
+            let rf = want + sh, sf = Math.round((r.src_in || 0) * fps);
+            let end = rf + Math.max(1, Math.round((r.rec + r.dur) * fps) - Math.round(r.rec * fps));
+            const u = vu.find(([s, t]) => rf < t && end > s);
+            if (!u) { skipped++; continue; }
+            const lo = p.gaps ? Math.max(rf, u[0], trackEnd['a' + recTrack] ?? -Infinity) : Math.max(rf, trackEnd['a' + recTrack] ?? -Infinity);
+            end = p.gaps ? Math.min(end, u[1]) : end;
+            if (lo !== rf || end !== rf + Math.round((r.rec + r.dur) * fps) - Math.round(r.rec * fps)) trimmed++;
+            if (end - lo < 1) continue;
+            sf += lo - rf;
+            const info = { mediaPoolItem: clip, startFrame: sf, endFrame: sf + (end - lo), trackIndex: recTrack, recordFrame: lo, mediaType: 2 };
+            const got = await put(info, 'a' + recTrack, MC_REC_COLOR, true, r.cam);
+            if (!got) { skipped++; continue; }
+            if (lowOn && recLow[r.path]) {
+                const low = idx.get(recLow[r.path].toLowerCase());
+                if (low) await put({ ...info, mediaPoolItem: low, trackIndex: lowTrack }, 'a' + lowTrack, MC_REC_LOW_COLOR, true, r.cam);
+            }
+            placed.push({ start: got.start, end: got.end, cluster: r.cluster, conf: r.conf, rec: true, want, trim: lo - rf });
         }
 
-        // kiem tra: khoang trong va cac cum khop audio co bi lech khong
+        // kiem tra: khoang trong, cum khop audio bi lech, Recorder lan sang doan khong co may quay
         const iv = placed.map(x => [x.start, x.end]).sort((a, b) => a[0] - b[0]);
         let holes = 0, e = iv.length ? iv[0][1] : 0;
         for (const [s, t] of iv.slice(1)) { if (s > e) holes++; e = Math.max(e, t); }
-        const byCl = {};
-        for (const x of placed) if (x.conf === 'green' || x.conf === 'lime') (byCl[x.cluster] = byCl[x.cluster] || []).push(x.start - x.want);
-        const offCl = Object.values(byCl).filter(v => v.length > 1 && Math.max(...v) - Math.min(...v) > 2).length;
+        // Cac clip khop audio cung cum va dang phat cung luc phai giu dung khoang cach da tinh (lech <= 2 frame).
+        // Chi so clip chong nhau: khi don khe, ca hinh va Recorder phia sau cung dich nen tieng van khop hinh.
+        const synced = placed.filter(x => x.conf === 'green' || x.conf === 'lime').map(x => ({ ...x, dev: x.start - x.want - x.trim }));
+        const offSet = new Set();
+        for (let i = 0; i < synced.length; i++) for (let j = i + 1; j < synced.length; j++) {
+            const a = synced[i], b = synced[j];
+            if (a.cluster === b.cluster && a.start < b.end && b.start < a.end && Math.abs(a.dev - b.dev) > 2) offSet.add(a.cluster);
+        }
+        const offCl = offSet.size;
+        const recs = placed.filter(x => x.rec);
+        const recOut = p.gaps ? recs.filter(x => !vu.some(([s, t]) => x.start >= s && x.end <= t)).length : 0;
         const minutes = iv.length ? (e - iv[0][0]) / fps / 60 : 0;
-        const stats = { clips: placed.length, skipped, colors, holes, offClusters: offCl, minutes: Math.round(minutes * 10) / 10, closed, pushed };
-        const note = placed.length + ' clip, dài ' + stats.minutes.toFixed(1) + ' phút, ' + holes + ' khoảng trống, ' + offCl + ' cụm khớp audio bị lệch'
+        const stats = { clips: placed.length - recs.length, recPieces: recs.length, recOut, skipped, colors, holes, offClusters: offCl,
+            minutes: Math.round(minutes * 10) / 10, closed, pushed, recTrimmed: trimmed };
+        const note = stats.clips + ' clip' + (recs.length ? ' + ' + recs.length + ' đoạn Recorder' : '') + ', dài ' + stats.minutes.toFixed(1) + ' phút, '
+            + holes + ' khoảng trống, ' + offCl + ' cụm khớp audio bị lệch' + (recs.length ? ', ' + recOut + ' đoạn Recorder lấn ra ngoài' : '')
             + (skipped ? ', ' + skipped + ' clip lỗi' : '');
         return placed.length ? { ok: true, note, stats, name } : { ok: false, error: 'Không đặt được clip nào vào timeline.' };
     } catch (e) { return { ok: false, error: 'Lỗi: ' + e.message }; }
