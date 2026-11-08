@@ -81,7 +81,11 @@ File .aac cần cài thêm ffmpeg mới phân tích được (không bắt buộ
 ------------------------------------------------------------------
 PHẦN 5. TAB AUDIO SYNC (ghép tiếng thu rời vào clip máy quay)
 ------------------------------------------------------------------
-Tab "Audio Sync" ghép file thu âm rời (ví dụ máy Tascam) vào đúng vị trí của clip máy quay.
+Tab "Audio Sync" có 2 chế độ (nút ở đầu tab):
+- "Recorder → máy quay": ghép file máy ghi âm rời (Recorder) vào đúng vị trí của clip máy quay.
+- "Nhiều máy quay": ghép 2–4 máy quay không chung timecode lên một timeline, chia màn hình
+  trái/phải hoặc lưới 2×2 (xem mục 12 trong LUU_Y_KHI_CAI_PANEL.txt).
+Các bước dưới đây là cho chế độ "Recorder → máy quay".
 Tab này cần Python + 2 thư viện. Các tab Nhạc và SFX vẫn dùng bình thường nếu bạn không cài.
 
 Cài một lần (Windows: Command Prompt, Mac: Terminal):
@@ -89,13 +93,13 @@ Cài một lần (Windows: Command Prompt, Mac: Terminal):
    Mac:      python3 -m pip install numpy imageio-ffmpeg
 
 Cách dùng:
-1. Bấm "+ Chọn file…" ở ô 1 để chọn file Audio Sync (tiếng chuẩn). Được chọn nhiều file.
+1. Bấm "+ Chọn file…" ở ô 1 để chọn file Recorder (tiếng chuẩn). Được chọn nhiều file.
 2. Ở ô 2, chọn clip máy quay: chọn clip trong Media Pool của Resolve rồi bấm
    "Lấy clip đang chọn trong Media Pool", hoặc bấm "+ Chọn file…".
 3. Bấm "Phân tích". Đợi thanh tiến trình chạy xong.
 4. Xem bảng kết quả. Màu xanh = chắc chắn, vàng/cam = nên nghe kiểm tra lại, đỏ = chưa sync được.
 5. Bấm "Tạo timeline đã sync trong Resolve": panel tạo timeline AUDIO_SYNC_ngày_giờ,
-   clip máy quay ở V1, tiếng Audio Sync ở track audio riêng đúng vị trí. Cần đang mở một project.
+   clip máy quay ở V1, tiếng Recorder ở track audio riêng đúng vị trí. Cần đang mở một project.
    Mặc định tiếng gốc của máy quay bị tắt; tick "Giữ tiếng gốc" nếu muốn giữ.
 6. "Xuất bảng CSV" để lưu kết quả ra file.
 

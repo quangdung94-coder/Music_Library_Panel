@@ -93,9 +93,25 @@
 - Nếu install_mac.command báo không tìm thấy WorkflowIntegration.node, làm theo cách cài thủ công trong README_CAI_DAT.txt.
 - Nếu Mac báo "không xác định được nhà phát triển": bấm chuột phải vào file rồi chọn Open (không bấm đúp).
 
-11. TAB AUDIO SYNC (thay cho công cụ Tascam Sync cũ)
-----------------------------------------------------
+11. TAB AUDIO SYNC
+------------------
 - Cài một lần: pip install numpy imageio-ffmpeg   (Mac: python3 -m pip install numpy imageio-ffmpeg)
-- Dùng: tab Audio Sync > chọn file Audio Sync (tiếng chuẩn) > chọn clip máy quay > Phân tích > Tạo timeline.
-- Không cần bật "External scripting" như công cụ cũ, vì giờ chạy ngay trong panel.
-- Phần "Tạo timeline" chưa thử trên Resolve thật, hãy thử trên project nháp trước.
+- Đầu tab có 2 chế độ:
+  "Recorder → máy quay": ghép file máy ghi âm rời (Recorder, máy nào cũng được) vào clip máy quay.
+    Chọn file Recorder > chọn clip máy quay > Phân tích > Tạo timeline.
+  "Nhiều máy quay": ghép 2–4 máy quay không chung timecode lên một timeline (xem mục 12).
+- Không cần bật "External scripting", vì chạy ngay trong panel.
+
+12. CHẾ ĐỘ NHIỀU MÁY QUAY (MULTICAM SYNC)
+-----------------------------------------
+- Mở bin chứa clip của các máy trong Media Pool, bấm "Tự chia theo tên file" (tách theo tên DG…, BAO HQ…).
+  Máy nhiều clip nhất thành Cam 1; bấm ↑ để đổi máy nào là Cam 1. Có thể lấy từng máy bằng
+  "Clip đang chọn", "Cả bin" hoặc "File…". Hàng Recorder không bắt buộc (có thì dùng làm trục chính).
+- Sync bằng audio: so sóng âm từng cặp clip. Clip không khớp audio đặt theo giờ máy đã chỉnh (tô vàng);
+  bỏ tick "Dùng giờ máy đã chỉnh" thì clip lẻ xen theo số tên file (tô cam).
+  Sync bằng timecode: dùng khi các máy chung timecode, đọc Start TC, gần như tức thì.
+- Gap lại: bật = bỏ khoảng trống, các đoạn nối liền; tắt = giữ khoảng cách thật.
+- Chia màn hình: 2 máy trái/phải; 3–4 máy lưới 2×2; tắt = mỗi máy đầy khung.
+- Màu clip: xanh lá = khớp audio chắc, xanh nhạt = khớp vừa (nên nghe lại), vàng = theo giờ đã chỉnh, cam = xen theo tên file.
+- Tên timeline không được trùng timeline đã có (panel báo lỗi, không ghi đè). Timeline đặt trong bin 03_timeline nếu có.
+- Panel đặt nguyên clip lên timeline, KHÔNG dùng và KHÔNG sửa điểm In/Out bạn đã đánh trong Media Pool.

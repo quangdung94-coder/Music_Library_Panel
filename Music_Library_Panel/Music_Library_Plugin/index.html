@@ -179,6 +179,56 @@ main.sync #syncView{display:flex}
 .st.ok{background:#5fbf6a}.st.okc{background:#9ad9a1}.st.chk{background:#e8d04f}.st.est{background:#e89a4f}.st.fail{background:#e8695f}
 #syLog{margin:0;padding:8px 12px;max-height:110px;overflow:auto;font:11px/1.5 Consolas,monospace;color:var(--mu);white-space:pre-wrap}
 @media(max-width:900px){.sy-cols{grid-template-columns:1fr}}
+/* Che do trong tab Audio Sync */
+.sy-pane{display:flex;flex-direction:column;gap:12px}
+.sy-mode{display:flex;align-items:center;gap:12px;flex-wrap:wrap;color:var(--mu)}
+.sy-seg{display:flex;border:1px solid #3d3d3d;border-radius:3px;overflow:hidden}
+.sy-seg button{padding:6px 14px;background:#2c2c2c;border:0;color:#c8c8c8;font:inherit;cursor:pointer}
+.sy-seg button[aria-pressed=true]{background:var(--ac);color:#161616;font-weight:600}
+/* Nhieu may quay */
+.mc-top{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:12px}
+.sy-h{display:flex;align-items:center;gap:8px;background:#2a2a2a;border-bottom:1px solid #0e0e0e;padding-right:8px}
+.sy-h h4{border:0;flex:1}
+#mcCams{display:flex;flex-direction:column;padding:2px 12px 0}
+.mc-row{display:grid;grid-template-columns:62px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #2c2c2c}
+.mc-tag{color:#fff;border-radius:3px;padding:3px 0;text-align:center;font-weight:600}
+.mc-tag.rec{background:#2c2c2c;color:var(--mu);border:1px dashed #4a4a4a;padding:2px 0;font-weight:400}
+.mc-info{display:flex;flex-direction:column;gap:2px;min-width:0}
+.mc-info small{color:var(--mu);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mc-info b{display:flex;gap:6px;align-items:center;font-weight:600;color:#fff}
+.mc-nm{width:110px;background:#1b1b1b;border:1px solid #3d3d3d;color:#fff;border-radius:3px;padding:2px 6px;font:inherit;font-weight:600}
+.mc-acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.mc-add{align-self:flex-start;margin:8px 12px 12px;border-style:dashed!important}
+.mc-opts{display:flex;flex-direction:column;gap:10px;padding:10px 12px 12px}
+.mc-meth{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mc-meth button{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:8px 10px;background:#2c2c2c;border:1px solid #3d3d3d;border-radius:3px;color:var(--mu);font:inherit;text-align:left;cursor:pointer}
+.mc-meth button b{color:#e6e6e6}
+.mc-meth button[aria-pressed=true]{background:#3a2a1d;border-color:var(--ac);color:#cfc2b6}
+.mc-meth button[aria-pressed=true] b{color:#fff}
+.mc-chk{display:flex;gap:8px;align-items:flex-start}
+.mc-chk small,.mc-sw small{display:block;color:var(--mu)}
+.mc-chk.off{opacity:.45}
+.mc-sws{display:flex;flex-direction:column;gap:8px;border-top:1px solid #2c2c2c;padding-top:10px}
+.mc-sw{display:flex;align-items:center;gap:10px}
+.mc-sw b{font-weight:500;color:#e6e6e6}
+.sw{width:34px;height:18px;flex:none;border:0;border-radius:9px;background:#4a4a4a;position:relative;padding:0;cursor:pointer}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:7px;background:#fff;transition:left .15s}
+.sw[aria-checked=true]{background:var(--ac)}
+.sw[aria-checked=true]::after{left:18px}
+.mc-names{display:grid;grid-template-columns:minmax(0,1fr) 120px;gap:8px;border-top:1px solid #2c2c2c;padding-top:10px}
+.mc-names label{display:flex;flex-direction:column;gap:4px;color:var(--mu)}
+.mc-names input{height:26px;box-sizing:border-box;padding:0 8px;background:#1b1b1b;border:1px solid #3d3d3d;border-radius:3px;color:#e6e6e6;font:inherit}
+.mc-leg{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:7px 12px;background:#2a2a2a;border-bottom:1px solid #0e0e0e}
+.mc-leg h4{padding:0;border:0;background:none}
+.mc-leg span{display:flex;align-items:center;gap:5px}
+.mc-leg #mcClockInfo{margin-left:auto;color:var(--mu)}
+.sq{display:inline-block;width:10px;height:10px;border-radius:2px}
+.c-green{background:#3f9b4b}.c-lime{background:#9ccc3d}.c-yellow{background:#e5c43f}.c-red{background:#e89a4f}.c-tc{background:#3f9b4b}
+#mcTbl{width:100%;border-collapse:collapse;font-size:12px}
+#mcTbl th{text-align:left;font-weight:500;color:var(--mu);font-size:11px;padding:5px 10px;background:#262626;position:sticky;top:0}
+#mcTbl td{padding:5px 10px;border-bottom:1px solid #262626;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#mcLog{margin:0;padding:8px 12px;max-height:110px;overflow:auto;font:11px/1.5 Consolas,monospace;color:var(--mu);white-space:pre-wrap}
+@media(max-width:900px){.mc-top{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -247,9 +297,18 @@ main.sync #syncView{display:flex}
 </section>
 
 <div id="syncView">
+  <div class="sy-mode">
+    <span>Chế độ</span>
+    <div class="sy-seg" role="group" aria-label="Chế độ">
+      <button id="syModeRec" aria-pressed="true">Recorder → máy quay</button>
+      <button id="syModeMc" aria-pressed="false">Nhiều máy quay</button>
+    </div>
+    <span id="syModeHint"></span>
+  </div>
+  <div class="sy-pane" id="syRecPane">
   <div class="sy-cols">
     <div class="sy-box">
-      <h4>1. File Audio Sync (tiếng chuẩn)</h4>
+      <h4>1. File Recorder (tiếng chuẩn)</h4>
       <div class="sy-btns"><button class="chip" id="syAddRef">+ Chọn file…</button><button class="chip" id="syClrRef">Xóa hết</button></div>
       <div class="sy-files" id="syRefs"></div>
     </div>
@@ -275,10 +334,60 @@ main.sync #syncView{display:flex}
   </div>
   <div class="sy-box">
     <h4>4. Kết quả</h4>
-    <div style="overflow:auto;max-height:340px"><table id="syTbl"><thead><tr><th>Clip máy quay</th><th>File Audio Sync</th><th>Vị trí</th><th>Trạng thái</th><th>Trôi (ms)</th><th>Ghi chú</th></tr></thead><tbody id="syRows"></tbody></table></div>
+    <div style="overflow:auto;max-height:340px"><table id="syTbl"><thead><tr><th>Clip máy quay</th><th>File Recorder</th><th>Vị trí</th><th>Trạng thái</th><th>Trôi (ms)</th><th>Ghi chú</th></tr></thead><tbody id="syRows"></tbody></table></div>
     <div class="sy-btns"><button class="chip sy-go" id="syApply" disabled>Tạo timeline đã sync trong Resolve</button><button class="chip" id="syCsv" disabled>Xuất bảng CSV</button><span id="syNote" style="color:var(--mu);align-self:center"></span></div>
   </div>
   <pre id="syLog"></pre>
+  </div>
+
+  <div class="sy-pane" id="syMcPane" style="display:none">
+    <div class="mc-top">
+      <div class="sy-box">
+        <div class="sy-h"><h4>1. Máy quay</h4><button class="chip" id="mcAuto" title="Lấy cả bin đang mở rồi tự tách máy theo tiền tố tên file (DG…, BAO HQ…) hoặc theo thư mục chứa file">Tự chia theo tên file</button></div>
+        <div id="mcCams"></div>
+        <button class="chip mc-add" id="mcAdd">+ Thêm máy (tối đa 4)</button>
+      </div>
+      <div class="sy-box">
+        <h4>2. Cách ghép &amp; tuỳ chọn</h4>
+        <div class="mc-opts">
+          <div class="mc-meth" role="group" aria-label="Cách ghép">
+            <button id="mcByTc" aria-pressed="false"><b>Sync bằng timecode</b><span>Các máy chung timecode (jam sync). Gần như tức thì.</span></button>
+            <button id="mcByAu" aria-pressed="true"><b>Sync bằng audio</b><span>So sóng âm từng cặp clip. Không cần timecode.</span></button>
+          </div>
+          <label class="mc-chk" id="mcClockRow"><input type="checkbox" id="mcClock" checked><span>Dùng giờ máy đã chỉnh cho clip không khớp audio<small>Độ lệch mỗi máy tự đo từ các cặp khớp audio. Tắt: clip lẻ xen theo số tên file, tô cam.</small></span></label>
+          <div class="mc-sws">
+            <div class="mc-sw"><button class="sw" role="switch" id="mcGaps" aria-checked="true" aria-label="Gap lại"></button><div><b>Gap lại (bỏ khoảng trống)</b><small>Tắt: giữ khoảng cách thật giữa các đoạn</small></div></div>
+            <div class="mc-sw"><button class="sw" role="switch" id="mcSplit" aria-checked="true" aria-label="Chia màn hình"></button><div><b>Chia màn hình</b><small>2 máy: trái / phải · 3–4 máy: lưới 2×2 · Tắt: đầy khung</small></div></div>
+          </div>
+          <div class="mc-names">
+            <label>Tên timeline<input id="mcName" placeholder="multicam_…"></label>
+            <label>Đặt vào bin<input id="mcBin" value="03_timeline"></label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sy-box">
+      <div class="sy-run">
+        <button class="chip sy-go" id="mcGo">▶ Phân tích</button>
+        <button class="chip" id="mcStop" disabled>■ Dừng</button>
+        <div id="mcBar" style="height:6px;background:#2c2c2c;border-radius:3px;overflow:hidden;flex:1;min-width:120px"><i style="display:block;height:100%;width:0;background:var(--ac);transition:width .2s"></i></div>
+        <span id="mcMsg" style="color:var(--mu)"></span>
+      </div>
+    </div>
+    <div class="sy-box">
+      <div class="mc-leg">
+        <h4>3. Kết quả</h4>
+        <span><i class="sq c-green"></i>Khớp audio chắc <b id="mcNG">0</b></span>
+        <span><i class="sq c-lime"></i>Khớp audio vừa <b id="mcNL">0</b></span>
+        <span><i class="sq c-yellow"></i>Theo giờ đã chỉnh <b id="mcNY">0</b></span>
+        <span><i class="sq c-red"></i>Xen theo tên file <b id="mcNR">0</b></span>
+        <span id="mcClockInfo"></span>
+      </div>
+      <div style="overflow:auto;max-height:360px"><table id="mcTbl"><thead><tr><th>Màu</th><th>Clip</th><th>Máy</th><th>Đoạn</th><th>Vị trí</th><th>Độ khớp</th><th>Ghi chú</th></tr></thead><tbody id="mcRows"></tbody></table></div>
+      <div class="sy-btns"><button class="chip sy-go" id="mcBuild" disabled>Tạo timeline</button><button class="chip" id="mcCsv" disabled>Xuất CSV</button><span id="mcNote" style="color:var(--mu);align-self:center"></span></div>
+    </div>
+    <pre id="mcLog"></pre>
+  </div>
 </div>
 </main>
 
@@ -640,6 +749,9 @@ function play(i, forceHighlight = false){
     : ((t.bpm ? Math.round(t.bpm)+" BPM" : "chưa có BPM") + " · " + (t.level||"") + " · " + (t.ext||"").slice(1));
   $("#np small").textContent = sub;
   render();
+  // Next/Prev: cuon danh sach toi bai dang phat
+  const onRow = $("#list .row.on");
+  if(onRow) onRow.scrollIntoView({block:"nearest"});
 }
 
 function step(d){
@@ -1057,7 +1169,7 @@ $("#syFromPool").onclick = async()=>{
 };
 $("#syGo").onclick = async()=>{
   if(!window.musicAPI) return;
-  if(!SY.refs.length) return toast("Chưa chọn file Audio Sync (tiếng chuẩn)", false);
+  if(!SY.refs.length) return toast("Chưa chọn file Recorder (tiếng chuẩn)", false);
   if(!SY.cams.length) return toast("Chưa chọn clip máy quay", false);
   SY.busy=true; SY.rows=[]; $("#syLog").textContent=""; $("#syNote").textContent=""; $("#syBar i").style.width="0"; syRender();
   const r = await musicAPI.syncRun({refs:SY.refs, cams:SY.cams, window:+$("#syWin").value||180, ratio:+$("#syRatio").value||1.5, drift:$("#syDrift").checked});
@@ -1092,6 +1204,204 @@ function applySyncMode(){
   if(SYNC_ON){ $("#tabMusic").classList.remove("on"); $("#tabSfx").classList.remove("on"); try{au.pause();}catch(e){} }
 }
 syRender();
+
+// ================= AUDIO SYNC: NHIEU MAY QUAY =================
+const CAMCOL = ["#2b4d73","#6b4a8a","#2e6b5a","#7a5a2a"];
+const mcEmpty = () => ({name:"", paths:[], src:""});
+let MC = {cams:[mcEmpty(), mcEmpty()], rec:[], method:"audio", clock:true, gaps:true, split:true, rows:[], summary:null, busy:false};
+const mcPrefix = p => syName(p).replace(/\.[^.]+$/,"").replace(/[\s_-]*\d+$/,"").trim();
+function mcGuessName(paths){
+  const c = {};
+  for(const p of paths){ const k = mcPrefix(p); if(k) c[k] = (c[k]||0) + 1; }
+  const best = Object.entries(c).sort((a,b)=>b[1]-a[1])[0];
+  return best ? best[0] : "";
+}
+function mcCamName(i){ const c = MC.cams[i]; return "Cam " + (i+1) + (c && c.name ? " " + c.name : ""); }
+function mcNames(){ return [...MC.cams.map((c,i)=>mcCamName(i)), "Recorder"]; }
+function mcPos(i){
+  const n = MC.cams.length;
+  if(!MC.split || n < 2) return "đầy khung";
+  if(n === 2) return i ? "bên phải" : "bên trái";
+  return ["trên-trái","trên-phải","dưới-trái","dưới-phải"][i];
+}
+function mcLog(m){ const l=$("#mcLog"); l.textContent += m+"\n"; l.scrollTop=l.scrollHeight; }
+function fmtPos(s){
+  s = Math.max(0, s||0);
+  const z = n => String(n).padStart(2,"0");
+  return `${z(Math.floor(s/3600))}:${z(Math.floor(s%3600/60))}:${(s%60).toFixed(1).padStart(4,"0")}`;
+}
+function fmtOff(s){
+  const sg = s < 0 ? "-" : "+"; s = Math.abs(s);
+  const z = n => String(n).padStart(2,"0");
+  return `${sg}${Math.floor(s/3600)}:${z(Math.floor(s%3600/60))}:${z(Math.round(s%60))}`;
+}
+function mcNote(r){
+  const ck = MC.summary && MC.summary.clock;
+  const det = (ck && ck.tach_khoi_cum) || [];
+  const n = r.conf==="lime" ? "Nên nghe kiểm tra"
+    : r.conf==="tc" ? "Theo timecode"
+    : r.conf==="yellow" ? (det.includes(r.name) ? "Audio lệch giờ quá 8 giây → tách khỏi cặp" : "Không khớp audio, đặt theo giờ đã chỉnh")
+    : r.conf==="red" ? (ck && !ck.loi ? "Không có giờ máy, xếp cuối" : "Không khớp audio, xen theo số tên file") : "";
+  return [n, r.note].filter(Boolean).join(" · ");
+}
+// Doi cai dat lam ket qua cu khong con dung: xoa de bam Phan tich lai
+function mcStale(){
+  if(MC.rows.length){ MC.rows=[]; MC.summary=null; $("#mcMsg").textContent="Đã đổi cài đặt, bấm Phân tích lại"; $("#mcBar i").style.width="0"; }
+  mcRender();
+}
+function mcRender(){
+  const n = MC.cams.length;
+  $("#mcCams").innerHTML = MC.cams.map((c,i)=>`<div class="mc-row" data-i="${i}">
+      <span class="mc-tag" style="background:${CAMCOL[i]}">Cam ${i+1}</span>
+      <div class="mc-info"><b><input class="mc-nm" data-a="nm" value="${syEsc(c.name)}" placeholder="tên máy" aria-label="Tên máy Cam ${i+1}"> · ${c.paths.length} clip</b>
+        <small title="${syEsc(c.src)}">${syEsc(c.src||"Chưa có clip")} · V${i+1}/A${i+1} · ${mcPos(i)}</small></div>
+      <div class="mc-acts">${i?`<button class="chip" data-a="up" title="Đổi chỗ với Cam ${i}">↑</button>`:""}<button class="chip" data-a="sel">Clip đang chọn</button><button class="chip" data-a="bin">Cả bin</button><button class="chip" data-a="file">File…</button><button class="chip" data-a="${n>2?"del":"clr"}" aria-label="Xóa Cam ${i+1}" title="${n>2?"Bỏ máy này":"Xóa clip của máy này"}">✕</button></div>
+    </div>`).join("") + `<div class="mc-row" data-i="rec">
+      <span class="mc-tag rec">Recorder</span>
+      <div class="mc-info"><span style="color:#c8c8c8">File Recorder · ${MC.rec.length ? MC.rec.length+" file" : "không bắt buộc"}</span>
+        <small title="${syEsc(MC.rec.join("\n"))}">${MC.rec.length ? syEsc(MC.rec.map(syName).join(", ")) : "Có file Recorder (bất kỳ máy ghi âm nào) thì dùng làm trục chính, đặt ở track audio cuối"}</small></div>
+      <div class="mc-acts"><button class="chip" data-a="recfile">Chọn file…</button>${MC.rec.length?`<button class="chip" data-a="recclr" aria-label="Xóa file Recorder">✕</button>`:""}</div>
+    </div>`;
+  $("#mcAdd").style.display = n >= 4 ? "none" : "";
+  $("#mcByTc").setAttribute("aria-pressed", MC.method==="tc");
+  $("#mcByAu").setAttribute("aria-pressed", MC.method==="audio");
+  $("#mcClockRow").classList.toggle("off", MC.method==="tc");
+  $("#mcClock").disabled = MC.method==="tc";
+  $("#mcGaps").setAttribute("aria-checked", MC.gaps);
+  $("#mcSplit").setAttribute("aria-checked", MC.split);
+
+  const names = mcNames();
+  const cnt = k => MC.rows.filter(r=>r.conf===k).length;
+  $("#mcNG").textContent = cnt("green") + cnt("tc");
+  $("#mcNL").textContent = cnt("lime");
+  $("#mcNY").textContent = cnt("yellow");
+  $("#mcNR").textContent = cnt("red");
+  const ck = MC.summary && MC.summary.clock;
+  $("#mcClockInfo").textContent = !ck ? "" : ck.loi ? ck.loi
+    : Object.keys(ck).filter(k=>/^cam\d+_lech_giay$/.test(k)).map(k=>{
+        const c = +k.match(/\d+/)[0];
+        return `${names[c-1]} lệch giờ ${names[0]}: ${fmtOff(ck[k])} (đo từ ${ck["cam"+c+"_so_cap"]} cặp, sai số ${ck.sai_so_giay} giây)`;
+      }).join(" · ");
+  $("#mcRows").innerHTML = MC.rows.map(r=>{
+    const note = mcNote(r);
+    const camName = r.cam === (MC.summary && MC.summary.recorder_cam) ? "Recorder" : names[r.cam];
+    return `<tr><td><i class="sq c-${r.conf}"></i></td><td title="${syEsc(r.path)}" style="color:#fff">${syEsc(r.name)}</td><td>${syEsc(camName)}</td><td>${(r.cluster||0)+1}</td><td>${fmtPos(r.rec)}</td><td>${r.score!=null ? Number(r.score).toFixed(2)+" · ×"+r.ratio : "—"}</td><td title="${syEsc(note)}" style="color:var(--mu)">${syEsc(note)}</td></tr>`;
+  }).join("");
+  $("#mcBuild").disabled = !MC.rows.length || MC.busy;
+  $("#mcCsv").disabled = !MC.rows.length;
+  $("#mcGo").disabled = MC.busy;
+  $("#mcStop").disabled = !MC.busy || MC.method==="tc";
+}
+function mcSet(c, paths, src){ c.paths = [...new Set(paths)]; c.src = src; if(!c.name) c.name = mcGuessName(c.paths); mcStale(); }
+function mcDefName(r){ if(!$("#mcName").value.trim()) $("#mcName").value = "multicam_" + r.parent; }
+const mcNeedApi = () => { if(!window.musicAPI){ toast("Chỉ dùng được khi mở trong DaVinci Resolve."); return true; } return false; };
+
+$("#mcCams").onclick = async e=>{
+  const b = e.target.closest("button[data-a]");
+  if(!b) return;
+  const a = b.dataset.a, ri = b.closest(".mc-row").dataset.i, i = +ri, c = MC.cams[i];
+  if(a==="up"){ [MC.cams[i-1], MC.cams[i]] = [MC.cams[i], MC.cams[i-1]]; return mcStale(); }
+  if(a==="del"){ MC.cams.splice(i,1); return mcStale(); }
+  if(a==="clr"){ c.paths=[]; c.src=""; return mcStale(); }
+  if(a==="recclr"){ MC.rec=[]; return mcStale(); }
+  if(mcNeedApi()) return;
+  if(a==="recfile"){ const p = await musicAPI.syncPick("audio"); if(p.length){ MC.rec = [...new Set([...MC.rec, ...p])]; mcStale(); } return; }
+  if(a==="file"){ const p = await musicAPI.syncPick("video"); if(p.length) mcSet(c, [...c.paths, ...p], c.src || "Chọn file"); return; }
+  if(a==="sel"){ const r = await musicAPI.syncSelected(); if(!r.ok) return toast(r.error); mcSet(c, r.paths, "Clip đang chọn trong Media Pool"); return; }
+  if(a==="bin"){
+    const r = await musicAPI.mcBin(); if(!r.ok) return toast(r.error);
+    const v = r.items.filter(x=>x.video).map(x=>x.path);
+    if(!v.length) return toast("Bin " + r.bin + " không có clip video");
+    mcSet(c, v, "Bin " + r.binPath); mcDefName(r);
+  }
+};
+$("#mcCams").onchange = e=>{
+  if(e.target.dataset.a !== "nm") return;
+  MC.cams[+e.target.closest(".mc-row").dataset.i].name = e.target.value.trim();
+  mcRender();
+};
+$("#mcAdd").onclick = ()=>{ if(MC.cams.length < 4){ MC.cams.push(mcEmpty()); mcStale(); } };
+$("#mcAuto").onclick = async ()=>{
+  if(mcNeedApi()) return;
+  const r = await musicAPI.mcBin(); if(!r.ok) return toast(r.error);
+  const vids = r.items.filter(x=>x.video).map(x=>x.path), auds = r.items.filter(x=>!x.video).map(x=>x.path);
+  const dir = p => p.replace(/[\\/][^\\/]*$/, "");
+  const by = key => { const g = new Map(); for(const p of vids){ const k = key(p); if(!g.has(k)) g.set(k, []); g.get(k).push(p); } return [...g.values()].sort((a,b)=>b.length-a.length); };
+  let groups = by(p=>mcPrefix(p).toLowerCase());
+  if(groups.length < 2) groups = by(p=>dir(p).toLowerCase());
+  if(groups.length < 2) return toast("Không tách được máy: mọi clip trong bin cùng tiền tố tên file và cùng thư mục.");
+  if(groups.length > 4) toast(`Bin có ${groups.length} nhóm tên file, chỉ lấy 4 nhóm nhiều clip nhất.`);
+  MC.cams = groups.slice(0,4).map(ps=>({name: mcGuessName(ps) || syName(dir(ps[0])), paths: ps, src: "Bin " + r.binPath}));
+  if(auds.length) MC.rec = auds;
+  mcDefName(r); mcStale();
+  toast(`Đã chia ${MC.cams.length} máy${auds.length ? " + " + auds.length + " file Recorder" : ""}. Bấm ↑ để đổi máy nào là Cam 1.`, true);
+};
+$("#mcByTc").onclick = ()=>{ if(MC.method!=="tc"){ MC.method="tc"; mcStale(); } };
+$("#mcByAu").onclick = ()=>{ if(MC.method!=="audio"){ MC.method="audio"; mcStale(); } };
+$("#mcClock").onchange = e=>{ MC.clock = e.target.checked; mcStale(); };
+$("#mcGaps").onclick = ()=>{ MC.gaps = !MC.gaps; mcStale(); };
+$("#mcSplit").onclick = ()=>{ MC.split = !MC.split; mcRender(); };
+$("#mcGo").onclick = async ()=>{
+  if(mcNeedApi()) return;
+  if(MC.cams.some(c=>!c.paths.length)) return toast("Còn máy chưa có clip. Thêm clip hoặc bấm ✕ để bỏ máy đó.");
+  if(MC.cams.length < 2) return toast("Cần ít nhất 2 máy.");
+  MC.busy=true; MC.rows=[]; MC.summary=null;
+  $("#mcLog").textContent=""; $("#mcNote").textContent=""; $("#mcBar i").style.width="0";
+  $("#mcMsg").textContent = MC.method==="tc" ? "Đang đọc timecode…" : "Đang chạy…";
+  mcRender();
+  const t0 = Date.now();
+  const r = MC.method==="tc"
+    ? await musicAPI.mcTc({cams: MC.cams.map(c=>c.paths), recorder: MC.rec, gaps: MC.gaps})
+    : await musicAPI.mcRun({cams: MC.cams.map((c,i)=>({name: mcCamName(i), files: c.paths})), recorder: MC.rec,
+        close_gaps: MC.gaps, clock_fallback: MC.clock, workers: 4});
+  MC.busy=false;
+  if(r.ok){
+    MC.rows = r.data.clips; MC.summary = r.data.summary;
+    const s = MC.summary;
+    $("#mcBar i").style.width="100%";
+    $("#mcMsg").textContent = `Xong · ${s.clips} clip` + (s.pairs_compared!=null ? ` · ${s.pairs_compared.toLocaleString("vi-VN")} cặp đã so` : "")
+      + ` · ${Math.round((Date.now()-t0)/1000)} giây · timeline dài ${(s.total_sec/60).toFixed(1)} phút`;
+    if(s.bad && s.bad.length) mcLog("Không đọc được timecode: " + s.bad.join(", "));
+  } else if(r.cancelled){ $("#mcMsg").textContent="Đã dừng"; }
+  else { $("#mcMsg").textContent="Lỗi"; mcLog(r.error||""); toast(r.error||"Lỗi phân tích"); }
+  mcRender();
+};
+$("#mcStop").onclick = ()=>{ if(window.musicAPI) musicAPI.mcCancel(); };
+$("#mcBuild").onclick = async ()=>{
+  const name = $("#mcName").value.trim();
+  if(!name) return toast("Chưa đặt tên timeline.");
+  $("#mcBuild").disabled=true; $("#mcNote").textContent="Đang tạo timeline…";
+  const r = await musicAPI.mcBuild({
+    rows: MC.rows.map(x=>({cam:x.cam, path:x.path, rec:x.rec, dur:x.dur, conf:x.conf, cluster:x.cluster})),
+    camNames: MC.cams.map((c,i)=>mcCamName(i)), hasRec: MC.summary.recorder_cam!=null,
+    split: MC.split, gaps: MC.gaps, name, bin: $("#mcBin").value.trim()});
+  $("#mcNote").textContent = r.ok ? "Đã tạo " + r.name + ": " + r.note : "";
+  toast(r.ok ? "Đã tạo timeline " + r.name : r.error, !!r.ok);
+  mcRender();
+};
+$("#mcCsv").onclick = async ()=>{
+  const names = mcNames(), rc = MC.summary && MC.summary.recorder_cam;
+  const r = await musicAPI.mcCsv(MC.rows.map(x=>({...x, camName: x.cam===rc ? "Recorder" : names[x.cam], note: mcNote(x)})));
+  if(r.ok) toast("Đã lưu: " + r.file, true); else if(!r.cancelled) toast(r.error||"Không lưu được", false);
+};
+if(window.musicAPI) musicAPI.onMc(o=>{
+  if(o.type==="progress"){ $("#mcBar i").style.width = Math.round(o.f*100)+"%"; $("#mcMsg").textContent = o.msg; }
+  else if(o.type==="log") mcLog(o.msg);
+});
+function setSyMode(m){
+  const mc = m === "mc";
+  $("#syRecPane").style.display = mc ? "none" : "";
+  $("#syMcPane").style.display = mc ? "" : "none";
+  $("#syModeRec").setAttribute("aria-pressed", !mc);
+  $("#syModeMc").setAttribute("aria-pressed", mc);
+  $("#syModeHint").textContent = mc ? "Ghép 2–4 máy không chung timecode, xếp liền trên một timeline"
+                                    : "Ghép file Recorder (bất kỳ máy ghi âm nào) vào đúng chỗ clip máy quay";
+  try{ localStorage.setItem("syMode", m); }catch(e){}
+}
+$("#syModeRec").onclick = ()=>setSyMode("rec");
+$("#syModeMc").onclick = ()=>setSyMode("mc");
+try{ setSyMode(localStorage.getItem("syMode")==="mc" ? "mc" : "rec"); }catch(e){ setSyMode("rec"); }
+mcRender();
 
 // Switch Tabs
 function setTab(tab){

@@ -19,5 +19,12 @@ contextBridge.exposeInMainWorld('musicAPI', {
     syncSelected: () => ipcRenderer.invoke('sync:selected'),
     syncApply: (payload) => ipcRenderer.invoke('sync:apply', payload),
     syncCsv: (rows) => ipcRenderer.invoke('sync:csv', rows),
-    onSync: (cb) => ipcRenderer.on('sync:event', (e, o) => cb(o))
+    onSync: (cb) => ipcRenderer.on('sync:event', (e, o) => cb(o)),
+    mcRun: (cfg) => ipcRenderer.invoke('mc:run', cfg),
+    mcCancel: () => ipcRenderer.invoke('mc:cancel'),
+    mcBin: () => ipcRenderer.invoke('mc:bin'),
+    mcTc: (payload) => ipcRenderer.invoke('mc:tc', payload),
+    mcBuild: (payload) => ipcRenderer.invoke('mc:build', payload),
+    mcCsv: (rows) => ipcRenderer.invoke('mc:csv', rows),
+    onMc: (cb) => ipcRenderer.on('mc:event', (e, o) => cb(o))
 });

@@ -342,7 +342,7 @@ async function syncPick(event, kind) {
         ? [{ name: 'Audio', extensions: ['wav', 'bwf', 'mp3', 'aif', 'aiff', 'flac', 'm4a', 'ogg'] }]
         : [{ name: 'Video', extensions: ['mp4', 'mov', 'mxf', 'mts', 'm2ts', 'avi', 'mkv', 'braw', 'r3d'] }];
     const r = await dialog.showOpenDialog(mainWindow, {
-        title: kind === 'audio' ? 'Chọn file Audio Sync (tiếng chuẩn)' : 'Chọn clip máy quay',
+        title: kind === 'audio' ? 'Chọn file Recorder (tiếng chuẩn)' : 'Chọn clip máy quay',
         properties: ['openFile', 'multiSelections'], filters: [...filters, { name: 'Tất cả', extensions: ['*'] }]
     });
     return r.canceled ? [] : r.filePaths;
@@ -454,6 +454,301 @@ async function syncCsv(event, rows) {
 }
 // ================= HET AUDIO SYNC =================
 
+// ================= MULTICAM: NHIEU MAY QUAY =================
+const MC_COLORS = { green: 'Green', lime: 'Lime', yellow: 'Yellow', red: 'Orange', tc: 'Green' };
+const MC_VIDEO_EXTS = ['.mp4', '.mov', '.mxf', '.mts', '.m2ts', '.avi', '.mkv', '.braw', '.r3d'];
+// Dau Tilt cua hang tren trong luoi 2x2 (+1: Tilt duong dua khung len tren). Da thu tren Resolve that.
+const MC_TILT_TOP = 1;
+let mcChild = null;
+
+function sendMc(o) { try { mainWindow.webContents.send('mc:event', o); } catch (e) {} }
+
+function runMcOnce(cmd, script, cfgFile, outFile) {
+    return new Promise(resolve => {
+        let buf = '', err = '', child, finished = false;
+        try {
+            child = spawn(cmd[0], [...cmd.slice(1), '-u', script, cfgFile, outFile],
+                { windowsHide: true, env: { ...process.env, PYTHONIOENCODING: 'utf-8' } });
+        } catch (e) { return resolve({ spawnFailed: true }); }
+        mcChild = child;
+        child.on('error', () => resolve({ spawnFailed: true }));
+        child.stdout.on('data', d => {
+            buf += d;
+            let i;
+            while ((i = buf.indexOf('\n')) >= 0) {
+                const line = buf.slice(0, i).trim();
+                buf = buf.slice(i + 1);
+                if (!line) continue;
+                try { const o = JSON.parse(line); if (o.type === 'done') finished = true; sendMc(o); } catch (e) {}
+            }
+        });
+        child.stderr.on('data', d => { err += d; });
+        child.on('close', () => {
+            mcChild = null;
+            if (finished) return resolve({ ok: true });
+            if (child.killed) return resolve({ ok: false, cancelled: true });
+            const missing = /No module named|ModuleNotFoundError/.test(err);
+            resolve({ ok: false, missing, error: err.trim().slice(-300) || 'Python dừng giữa chừng.' });
+        });
+    });
+}
+
+// Sync bang audio: chay multicam_sync.py, doc file ket qua
+async function mcRun(event, cfg) {
+    const script = path.join(__dirname, 'multicam_sync.py');
+    if (!fs.existsSync(script) || !fs.existsSync(path.join(__dirname, 'sync_engine.py')))
+        return { ok: false, error: 'Thiếu file multicam_sync.py hoặc sync_engine.py trong thư mục plugin.' };
+    const cfgFile = path.join(os.tmpdir(), 'multicam_cfg.json');
+    const outFile = path.join(os.tmpdir(), 'multicam_res.json');
+    try { fs.unlinkSync(outFile); } catch (e) {}
+    fs.writeFileSync(cfgFile, JSON.stringify({ ...cfg, engine_dir: __dirname }));
+    let last = null;
+    for (const cmd of pythonCandidates()) {
+        const r = await runMcOnce(cmd, script, cfgFile, outFile);
+        if (r.spawnFailed) continue;
+        if (r.cancelled) return r;
+        if (r.ok) {
+            try { return { ok: true, data: JSON.parse(fs.readFileSync(outFile, 'utf8')) }; }
+            catch (e) { return { ok: false, error: 'Không đọc được kết quả: ' + e.message }; }
+        }
+        last = r;
+        if (!r.missing) return r;
+    }
+    if (last) return { ok: false, error: 'Thiếu thư viện Python. Hãy chạy: pip install numpy imageio-ffmpeg' };
+    return { ok: false, error: 'Không tìm thấy Python trên máy. Cần cài Python (xem file LUU_Y).' };
+}
+
+function mcCancel() { if (mcChild) { try { mcChild.kill(); } catch (e) {} } return true; }
+
+async function findFolderPath(folder, id, trail) {
+    const here = [...trail, await folder.GetName()];
+    if ((await folder.GetUniqueId()) === id) return here;
+    for (const sf of ((await folder.GetSubFolderList()) || [])) {
+        const r = await findFolderPath(sf, id, here);
+        if (r) return r;
+    }
+    return null;
+}
+
+async function findFolderByName(folder, name) {
+    for (const sf of ((await folder.GetSubFolderList()) || [])) {
+        if ((await sf.GetName()) === name) return sf;
+    }
+    for (const sf of ((await folder.GetSubFolderList()) || [])) {
+        const r = await findFolderByName(sf, name);
+        if (r) return r;
+    }
+    return null;
+}
+
+// Lay moi clip trong bin dang mo cua Media Pool (khong lay bin con)
+async function mcBin() {
+    try {
+        const project = await getProject();
+        if (!project) return { ok: false, error: 'Chưa mở project nào trong Resolve.' };
+        const mp = await project.GetMediaPool();
+        const folder = await mp.GetCurrentFolder();
+        if (!folder) return { ok: false, error: 'Chưa mở bin nào trong Media Pool.' };
+        const items = [];
+        for (const c of ((await folder.GetClipList()) || [])) {
+            const fp = await c.GetClipProperty('File Path');
+            if (fp) items.push({ path: fp, video: MC_VIDEO_EXTS.includes(path.extname(fp).toLowerCase()) });
+        }
+        let trail = null;
+        try { trail = await findFolderPath(await mp.GetRootFolder(), await folder.GetUniqueId(), []); } catch (e) {}
+        const name = await folder.GetName();
+        const names = trail ? trail.slice(1) : [name];         // bo "Master"
+        if (!items.length) return { ok: false, error: 'Bin "' + name + '" chưa có clip nào.' };
+        return { ok: true, items, bin: name, binPath: names.join(' / '), parent: names.length > 1 ? names[names.length - 2] : name };
+    } catch (e) { return { ok: false, error: 'Lỗi: ' + e.message }; }
+}
+
+function tcToSec(tc, fps) {
+    const m = /(\d+)[:;](\d+)[:;](\d+)[:;.](\d+)/.exec(tc || '');
+    if (!m) return null;
+    return (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]) + (+m[4]) / Math.max(1, Math.round(fps));
+}
+
+// Import cac file chua co trong Media Pool vao bin AUDIO_SYNC. Tra ve chi muc duong dan -> clip.
+async function mcPoolItems(project, paths) {
+    const mp = await project.GetMediaPool();
+    let idx = await poolIndex(mp, SYNC_BIN);
+    const missing = [...new Set(paths)].filter(p => !idx.has(p.toLowerCase()));
+    if (missing.length) {
+        const resolve = await getResolve();
+        const storage = await resolve.GetMediaStorage();
+        const prev = await mp.GetCurrentFolder();
+        await mp.SetCurrentFolder(await getTargetBin(mp, SYNC_BIN));
+        await storage.AddItemListToMediaPool(missing);
+        if (prev) await mp.SetCurrentFolder(prev);
+        idx = await poolIndex(mp, SYNC_BIN);
+    }
+    const clips = new Map();
+    for (const [k, v] of idx) clips.set(k, v.clip);
+    return { mp, idx: clips };
+}
+
+// Bo khoang trong: items [{start, dur}] -> gan .rec; tra ve tong do dai. gaps=false: chi dua diem dau ve 0.
+function mcCompress(items, gaps) {
+    items.sort((a, b) => a.start - b.start);
+    if (!items.length) return 0;
+    if (!gaps) {
+        const s0 = items[0].start;
+        items.forEach(x => { x.rec = x.start - s0; });
+        return Math.max(...items.map(x => x.start + x.dur)) - s0;
+    }
+    let acc = 0, end = null, seg = -1;
+    for (const x of items) {
+        if (end === null || x.start > end) { acc += end === null ? x.start : x.start - end; seg++; }
+        x.rec = x.start - acc; x.cluster = seg;
+        end = end === null ? x.start + x.dur : Math.max(end, x.start + x.dur);
+    }
+    return items.reduce((m, x) => Math.max(m, x.rec + x.dur), 0);
+}
+
+// Sync bang timecode: doc Start TC cua tung clip, khong phan tich audio
+async function mcTc(event, p) {
+    try {
+        const project = await getProject();
+        if (!project) return { ok: false, error: 'Chưa mở project nào trong Resolve.' };
+        const tlFps = parseFloat(await project.GetSetting('timelineFrameRate')) || 25;
+        const groups = [...(p.cams || [])];
+        if (p.recorder && p.recorder.length) groups.push(p.recorder);
+        const { idx } = await mcPoolItems(project, groups.flat());
+        const items = [], bad = [];
+        for (let cam = 0; cam < groups.length; cam++) {
+            for (const fp of groups[cam]) {
+                const clip = idx.get(fp.toLowerCase());
+                const name = path.basename(fp);
+                if (!clip) { bad.push(name); continue; }
+                const fps = parseFloat(await clip.GetClipProperty('FPS')) || tlFps;
+                const start = tcToSec(await clip.GetClipProperty('Start TC'), fps);
+                const frames = parseInt(await clip.GetClipProperty('Frames'), 10);
+                const dur = frames > 0 ? frames / fps : tcToSec(await clip.GetClipProperty('Duration'), fps);
+                if (start == null || !dur) { bad.push(name); continue; }
+                items.push({ cam, path: fp, name, dur, start, conf: 'tc', score: null, ratio: null, note: '' });
+            }
+        }
+        if (!items.length) return { ok: false, error: 'Không đọc được Start TC của clip nào.' };
+        const total = mcCompress(items, p.gaps !== false);
+        items.forEach(x => { if (x.cluster == null) x.cluster = 0; delete x.start; });
+        items.sort((a, b) => a.rec - b.rec || a.cam - b.cam);
+        const summary = { clips: items.length, tc: items.length, total_sec: total, bad,
+            recorder_cam: p.recorder && p.recorder.length ? p.cams.length : null };
+        return { ok: true, data: { summary, clips: items } };
+    } catch (e) { return { ok: false, error: 'Lỗi: ' + e.message }; }
+}
+
+// Dung timeline multicam. Bai hoc 08/11: luon dat nguyen clip (startFrame 0, endFrame = Frames, endFrame khong tinh),
+// khe 1-2 frame do lam tron thi don lai, chong len clip truoc cung track thi day sang sau.
+async function mcBuild(event, p) {
+    try {
+        const project = await getProject();
+        if (!project) return { ok: false, error: 'Chưa mở project nào trong Resolve.' };
+        const fps = parseFloat(await project.GetSetting('timelineFrameRate')) || 25;
+        const W = parseInt(await project.GetSetting('timelineResolutionWidth'), 10) || 1920;
+        const H = parseInt(await project.GetSetting('timelineResolutionHeight'), 10) || 1080;
+        const name = String(p.name || '').trim();
+        if (!name) return { ok: false, error: 'Chưa đặt tên timeline.' };
+        const ntl = (await project.GetTimelineCount()) || 0;
+        for (let i = 1; i <= ntl; i++) {
+            const t = await project.GetTimelineByIndex(i);
+            if (t && (await t.GetName()) === name) return { ok: false, error: 'Đã có timeline tên "' + name + '". Đặt tên khác để không ghi đè.' };
+        }
+        const nv = p.camNames.length;
+        const recCam = p.hasRec ? nv : -1;
+        const rows = (p.rows || []).slice().sort((a, b) => a.rec - b.rec || a.cam - b.cam);
+        const { mp, idx } = await mcPoolItems(project, rows.map(r => r.path));
+
+        const prev = await mp.GetCurrentFolder();
+        const dest = (p.bin && (await findFolderByName(await mp.GetRootFolder(), p.bin))) || prev;
+        if (dest) await mp.SetCurrentFolder(dest);
+        const tl = await mp.CreateEmptyTimeline(name);
+        if (prev) await mp.SetCurrentFolder(prev);
+        if (!tl) return { ok: false, error: 'Không tạo được timeline "' + name + '".' };
+        await project.SetCurrentTimeline(tl);
+
+        const nAudio = nv + (p.hasRec ? 1 : 0);
+        while (((await tl.GetTrackCount('video')) || 0) < nv) { if (!(await tl.AddTrack('video'))) break; }
+        while (((await tl.GetTrackCount('audio')) || 0) < nAudio) {
+            if (!(await tl.AddTrack('audio', 'stereo')) && !(await tl.AddTrack('audio'))) break;
+        }
+        for (let i = 0; i < nv; i++) {
+            await tl.SetTrackName('video', i + 1, p.camNames[i]);
+            await tl.SetTrackName('audio', i + 1, p.camNames[i]);
+        }
+        if (p.hasRec) await tl.SetTrackName('audio', nAudio, 'Recorder');
+
+        // vi tri khi chia man hinh: 2 may trai/phai, 3-4 may luoi 2x2
+        const place = cam => {
+            if (!p.split || nv < 2) return null;
+            const pan = (cam % 2 ? 1 : -1) * W / 4;
+            const tilt = nv === 2 ? 0 : (cam < 2 ? 1 : -1) * MC_TILT_TOP * H / 4;
+            return { ZoomX: 0.5, ZoomY: 0.5, Pan: pan, Tilt: tilt };
+        };
+
+        const base = (await tl.GetStartFrame()) || 0;
+        const trackEnd = {}, placed = [], colors = {};
+        let shift = 0, cover = base, skipped = 0, pushed = 0, closed = 0;
+        for (const r of rows) {
+            const clip = idx.get(r.path.toLowerCase());
+            if (!clip) { skipped++; continue; }
+            const isRec = r.cam === recCam;
+            const track = isRec ? nAudio : r.cam + 1;
+            const key = (isRec ? 'a' : 'v') + track;
+            let rf = base + Math.round(r.rec * fps) + shift;
+            if (p.gaps && rf > cover && rf - cover <= 2) { closed++; shift -= rf - cover; rf = cover; }
+            if (trackEnd[key] != null && rf < trackEnd[key]) { pushed++; rf = trackEnd[key]; }
+            let endFrame = parseInt(await clip.GetClipProperty('Frames'), 10);
+            if (!(endFrame > 0) || isRec) endFrame = Math.max(1, Math.round((r.dur || 1) * (isRec ? fps : (parseFloat(await clip.GetClipProperty('FPS')) || fps))));
+            const info = { mediaPoolItem: clip, startFrame: 0, endFrame, trackIndex: track, recordFrame: rf };
+            if (isRec) info.mediaType = 2;
+            const items = (await mp.AppendToTimeline([info])) || [];
+            if (!items.length) { skipped++; continue; }
+            let start = null, end = rf;
+            const color = MC_COLORS[r.conf] || 'Orange';
+            for (const it of items) {
+                const s = await it.GetStart(), d = await it.GetDuration();
+                if (start === null || s < start) start = s;
+                end = Math.max(end, s + d);
+                await it.SetClipColor(color);
+                const tt = await it.GetTrackTypeAndIndex();
+                const tf = !isRec && tt && tt[0] === 'video' ? place(r.cam) : null;
+                if (tf) for (const k of Object.keys(tf)) await it.SetProperty(k, tf[k]);
+            }
+            trackEnd[key] = end;
+            cover = Math.max(cover, end);
+            colors[color] = (colors[color] || 0) + 1;
+            placed.push({ start, end, cluster: r.cluster, conf: r.conf, want: base + Math.round(r.rec * fps) });
+        }
+
+        // kiem tra: khoang trong va cac cum khop audio co bi lech khong
+        const iv = placed.map(x => [x.start, x.end]).sort((a, b) => a[0] - b[0]);
+        let holes = 0, e = iv.length ? iv[0][1] : 0;
+        for (const [s, t] of iv.slice(1)) { if (s > e) holes++; e = Math.max(e, t); }
+        const byCl = {};
+        for (const x of placed) if (x.conf === 'green' || x.conf === 'lime') (byCl[x.cluster] = byCl[x.cluster] || []).push(x.start - x.want);
+        const offCl = Object.values(byCl).filter(v => v.length > 1 && Math.max(...v) - Math.min(...v) > 2).length;
+        const minutes = iv.length ? (e - iv[0][0]) / fps / 60 : 0;
+        const stats = { clips: placed.length, skipped, colors, holes, offClusters: offCl, minutes: Math.round(minutes * 10) / 10, closed, pushed };
+        const note = placed.length + ' clip, dài ' + stats.minutes.toFixed(1) + ' phút, ' + holes + ' khoảng trống, ' + offCl + ' cụm khớp audio bị lệch'
+            + (skipped ? ', ' + skipped + ' clip lỗi' : '');
+        return placed.length ? { ok: true, note, stats, name } : { ok: false, error: 'Không đặt được clip nào vào timeline.' };
+    } catch (e) { return { ok: false, error: 'Lỗi: ' + e.message }; }
+}
+
+async function mcCsv(event, rows) {
+    const def = path.join(app.getPath('documents'), 'MusicPanel', 'multicam_' + Date.now() + '.csv');
+    const r = await dialog.showSaveDialog(mainWindow, { title: 'Lưu bảng kết quả', defaultPath: def, filters: [{ name: 'CSV', extensions: ['csv'] }] });
+    if (r.canceled || !r.filePath) return { ok: false, cancelled: true };
+    const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+    const lines = [['file', 'may', 'cum', 'vi_tri_giay', 'mau', 'do_khop', 'ti_le_dinh', 'ghi_chu'].join(',')];
+    for (const x of rows) lines.push([x.path, x.camName, x.cluster, x.rec, x.conf, x.score, x.ratio, x.note].map(q).join(','));
+    try { fs.mkdirSync(path.dirname(r.filePath), { recursive: true }); fs.writeFileSync(r.filePath, '﻿' + lines.join('\r\n')); return { ok: true, file: r.filePath }; }
+    catch (e) { return { ok: false, error: e.message }; }
+}
+// ================= HET MULTICAM =================
+
 let mainWindow;
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -501,6 +796,12 @@ app.whenReady().then(() => {
     ipcMain.handle('sync:selected', syncSelected);
     ipcMain.handle('sync:apply', syncApply);
     ipcMain.handle('sync:csv', syncCsv);
+    ipcMain.handle('mc:run', mcRun);
+    ipcMain.handle('mc:cancel', mcCancel);
+    ipcMain.handle('mc:bin', mcBin);
+    ipcMain.handle('mc:tc', mcTc);
+    ipcMain.handle('mc:build', mcBuild);
+    ipcMain.handle('mc:csv', mcCsv);
     createWindow();
 });
 

@@ -28,9 +28,23 @@ Panel Workflow Integration cho DaVinci Resolve Studio: thư viện nhạc/SFX (t
 - `main.js`: Resolve API (import Media Pool/Timeline, chặn trùng, Audio Sync tạo timeline), quét thư mục, gọi Python.
 - `preload.js`: cầu nối `window.musicAPI`. `index.html`: toàn bộ giao diện 3 tab.
 - `analyze_music.py` (librosa): BPM, năng lượng, highlight. `sync_engine.py` + `sync_runner.py` (numpy, imageio-ffmpeg): Audio Sync.
+- `multicam_sync.py`: chế độ "Nhiều máy quay" (ghép 2–4 máy bằng audio, dùng `sync_engine.py`). Ngưỡng đã chỉnh theo dữ liệu thật 08/11, không đổi khi chưa hỏi.
+  `main.js`: `mc:run` (chạy Python), `mc:tc` (Sync bằng timecode, chỉ JS), `mc:bin`, `mc:build` (dựng timeline), `mc:csv`.
+
+## Thử nghiệm
+- KHÔNG chạy `main.js` trực tiếp trong repo (thiếu `WorkflowIntegration.node`). Muốn thử thật: chép file vào thư mục plugin
+  (giữ nguyên `WorkflowIntegration.node` ở đó), nhờ người dùng tắt hẳn Resolve và mở lại panel.
+- Kiểm tra cú pháp: biên dịch thử bằng `vm.Script` với Electron của Resolve (`ELECTRON_RUN_AS_NODE=1`), không chạy file.
+- Có thể chạy bản sao `main.js` ở thư mục nháp với `electron` và `./WorkflowIntegration.node` giả (Module._load) để thử logic dựng timeline.
+  Giả lập phải làm tròn độ dài clip XUỐNG (Resolve: 59.94 fps → 25 fps lấy phần nguyên) mới khớp timeline thật.
+- Project thử: `2026.10.25.LV_NgocQuynh`, bin `01_Le sang/01_Sync Cam`, `02_Tiec Toi/02_Sync Cam`; timeline mốc
+  `multicam_01_Le sang` (222 clip: 104 Green/37 Lime/81 Yellow, 76.85 phút), `multicam_02_Tiec Toi` (417: 41/73/303, 113.61 phút). Không ghi đè 2 timeline này.
 
 ## Kỹ thuật DaVinci (xem thêm ghi chú bên project VideoAI `D:\VideoAI\repo\CLAUDE.md`)
 - Import dùng `MediaStorage.AddItemListToMediaPool` (`MediaPool.ImportMedia` từng lỗi).
 - Chặn trùng: `poolIndex()` quét cả Media Pool, ưu tiên bin đích (02_music / 03_sfx kể cả bin con).
   + Media bỏ qua file đã có; + Timeline dừng hẳn và chỉ báo.
 - Bên VideoAI đã đo: `AppendToTimeline` endFrame KHÔNG tính (truyền frame ngay sau điểm ra).
+- Multicam: luôn đặt nguyên clip (`startFrame: 0`, `endFrame: Frames`), không dùng/không sửa In/Out trong Media Pool.
+  `trackIndex` đặt cùng lúc Vn/An. Chia màn hình: ZoomX/ZoomY 0.5, Pan ∓rộng/4, Tilt ±cao/4; Tilt DƯƠNG = hàng TRÊN (đã thử 08/11).
+  Màu: green→Green, lime→Lime, yellow→Yellow, red (xen theo tên file)→Orange.
