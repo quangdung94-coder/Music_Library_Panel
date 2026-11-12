@@ -3,6 +3,7 @@ const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const crypto = require('crypto');
 const { spawn } = require('child_process');
 const WorkflowIntegration = require('./WorkflowIntegration.node');
 
@@ -35,15 +36,6 @@ async function getTargetBin(mediaPool, binName = DEFAULT_MUSIC_BIN) {
         if ((await f.GetName()) === binName) return f;
     }
     return await mediaPool.AddSubFolder(root, binName);
-}
-
-async function findClip(bin, filePath) {
-    const clips = (await bin.GetClipList()) || [];
-    for (const c of clips) {
-        const fp = await c.GetClipProperty('File Path');
-        if (fp && fp.toLowerCase() === filePath.toLowerCase()) return c;
-    }
-    return null;
 }
 
 // Tim / tao bin con theo duong dan thu muc (giong Explorer): 03_sfx/Whoosh/Big
@@ -248,24 +240,30 @@ function runPy(cmd, script, listFile) {
         });
         child.stderr.on('data', d => { err += d; });
         child.on('close', code => resolve(code === 0 ? { ok: true }
+            : isStoreStub(code, err) ? { spawnFailed: true }
             : { ok: false, error: 'Phân tích bị lỗi (có thể thiếu thư viện librosa): ' + err.trim().slice(-200) }));
     });
 }
+// Windows: may chua cai Python thi lenh "python" la lenh gia cua Microsoft Store (thoat ma 9009, bao "Python was not found")
+const isStoreStub = (code, err) => process.platform === 'win32' &&
+    (code === 9009 || /Microsoft Store|Python was not found|App execution aliases/i.test(err || ''));
+
 function pythonCandidates() {
     const cands = [];
     try {
         const custom = fs.readFileSync(path.join(app.getPath('documents'), 'MusicPanel', 'python_path.txt'), 'utf8').trim();
         if (custom) cands.push([custom]);
     } catch (e) {}
-    if (process.platform === 'win32') cands.push(['python'], ['py', '-3'], ['python3']);
+    if (process.platform === 'win32') cands.push(['py', '-3'], ['python'], ['python3']);
     else cands.push(['/Library/Frameworks/Python.framework/Versions/Current/bin/python3'],
         ['/opt/homebrew/bin/python3'], ['/usr/local/bin/python3'], ['python3'], ['python']);
     return cands;
 }
 
-async function analyzeFiles(event, paths) {
+async function analyzeFiles(event, paths, mode) {
     const listFile = path.join(os.tmpdir(), 'musicpanel_list.json');
-    fs.writeFileSync(listFile, JSON.stringify(paths));
+    // mode "sfx": chi do nang luong, bo BPM va Highlight (nhanh hon nhieu)
+    fs.writeFileSync(listFile, JSON.stringify({ mode: mode === 'sfx' ? 'sfx' : 'music', paths }));
     const script = path.join(__dirname, 'analyze_music.py');
     if (!fs.existsSync(script)) return { ok: false, error: 'Thiếu file analyze_music.py trong thư mục plugin.' };
     const cands = pythonCandidates();
@@ -277,9 +275,100 @@ async function analyzeFiles(event, paths) {
         last = r;
         if (!/No module named|ModuleNotFoundError/.test(r.error || '')) return r;
     }
-    return last || { ok: false, error: 'Không tìm thấy Python trên máy. Cần cài Python và thư viện librosa.' };
+    return last || { ok: false, error: 'Không tìm thấy Python trên máy (chưa cài Python từ python.org). Xem mục 6 file LUU_Y.' };
 }
 
+
+// ================= SONG AM =================
+// Tinh san 1000 diem song am. WAV/BWF (PCM) doc thang tu dia, khong gioi han dung luong.
+// File khac (mp3, aac…) <= 80MB: gui file cho giao dien giai ma, giao dien gui lai diem song am de luu cache.
+const WAVE_N = 1000;
+const waveDir = () => path.join(app.getPath('documents'), 'MusicPanel', 'wave_cache');
+function waveKey(p) {
+    const st = fs.statSync(p);
+    return crypto.createHash('md5').update('w1|' + path.resolve(p).toLowerCase() + '|' + st.size + '|' + Math.round(st.mtimeMs)).digest('hex');
+}
+function waveCacheFile(p) { return path.join(waveDir(), waveKey(p) + '.json'); }
+
+// Doc header WAV: tim chunk fmt va data (bo qua bext, LIST… cua may ghi am)
+function wavInfo(fd, size) {
+    const h = Buffer.alloc(12);
+    fs.readSync(fd, h, 0, 12, 0);
+    if (h.toString('ascii', 0, 4) !== 'RIFF' || h.toString('ascii', 8, 12) !== 'WAVE') return null;
+    let pos = 12, fmt = null;
+    const ch = Buffer.alloc(8);
+    while (pos + 8 <= size) {
+        fs.readSync(fd, ch, 0, 8, pos);
+        const id = ch.toString('ascii', 0, 4), len = ch.readUInt32LE(4);
+        if (id === 'fmt ') {
+            const f = Buffer.alloc(Math.min(len, 40));
+            fs.readSync(fd, f, 0, f.length, pos + 8);
+            let tag = f.readUInt16LE(0);
+            if (tag === 0xFFFE && f.length >= 26) tag = f.readUInt16LE(24);   // WAVE_FORMAT_EXTENSIBLE
+            fmt = { tag, chans: f.readUInt16LE(2), align: f.readUInt16LE(12), bits: f.readUInt16LE(14) };
+        } else if (id === 'data' && fmt) {
+            const dataLen = (len === 0xFFFFFFFF || pos + 8 + len > size) ? size - pos - 8 : len;
+            return { ...fmt, start: pos + 8, len: dataLen };
+        }
+        pos += 8 + len + (len & 1);
+    }
+    return null;
+}
+
+async function wavPeaks(p) {
+    const size = fs.statSync(p).size;
+    const fd = fs.openSync(p, 'r');
+    try {
+        const w = wavInfo(fd, size);
+        if (!w || !w.align || !w.len) return null;
+        const pcm = w.tag === 1 && [16, 24, 32].includes(w.bits), flt = w.tag === 3 && w.bits === 32;
+        if (!pcm && !flt) return null;
+        const frames = Math.floor(w.len / w.align), bin = Math.max(1, frames / WAVE_N);
+        const stride = Math.max(1, Math.floor(bin / 2000));            // moi o lay toi da ~2000 mau
+        const rd = w.bits === 16 ? (b, o) => b.readInt16LE(o) / 32768
+                 : w.bits === 24 ? (b, o) => b.readIntLE(o, 3) / 8388608
+                 : flt ? (b, o) => b.readFloatLE(o) : (b, o) => b.readInt32LE(o) / 2147483648;
+        const pk = new Float32Array(WAVE_N);
+        const CH = w.align * 65536, buf = Buffer.alloc(CH);
+        let frame = 0, mx = 1e-4;
+        for (let off = 0; off < frames * w.align; off += CH) {
+            const n = await new Promise((res, rej) => fs.read(fd, buf, 0, Math.min(CH, frames * w.align - off), w.start + off, (e, b) => e ? rej(e) : res(b)));
+            const nf = Math.floor(n / w.align);
+            let k = (stride - (frame % stride)) % stride;
+            for (; k < nf; k += stride) {
+                const v = Math.abs(rd(buf, k * w.align)), i = Math.min(WAVE_N - 1, Math.floor((frame + k) / bin));
+                if (v > pk[i]) pk[i] = v;
+            }
+            frame += nf;
+            if (!n) break;
+        }
+        for (let i = 0; i < WAVE_N; i++) { if (pk[i] > mx) mx = pk[i]; }
+        return Array.from(pk, v => Math.round(v / mx * 1000) / 1000);
+    } finally { fs.closeSync(fd); }
+}
+
+async function wavePeaks(event, p) {
+    try {
+        const cf = waveCacheFile(p);
+        try { return { ok: true, peaks: JSON.parse(fs.readFileSync(cf, 'utf8')) }; } catch (e) {}
+        let pk = null;
+        if (/\.(wav|bwf)$/i.test(p)) { try { pk = await wavPeaks(p); } catch (e) { pk = null; } }
+        if (pk) {
+            try { fs.mkdirSync(waveDir(), { recursive: true }); fs.writeFileSync(cf, JSON.stringify(pk)); } catch (e) {}
+            return { ok: true, peaks: pk };
+        }
+        if (fs.statSync(p).size > 80 * 1024 * 1024) return { ok: false, tooBig: true };
+        return { ok: true, data: fs.readFileSync(p) };
+    } catch (err) { return { ok: false }; }
+}
+function waveSave(event, p, pk) {
+    try {
+        if (!Array.isArray(pk) || pk.length !== WAVE_N) return false;
+        fs.mkdirSync(waveDir(), { recursive: true });
+        fs.writeFileSync(waveCacheFile(p), JSON.stringify(pk));
+        return true;
+    } catch (e) { return false; }
+}
 
 // ================= AUDIO SYNC =================
 const SYNC_BIN = 'AUDIO_SYNC';
@@ -311,6 +400,7 @@ function runSyncOnce(cmd, script, cfgFile) {
             syncChild = null;
             if (finished) return resolve({ ok: true });
             if (child.killed) return resolve({ ok: false, cancelled: true });
+            if (!gotAny && isStoreStub(code, err)) return resolve({ spawnFailed: true });
             const missing = /No module named|ModuleNotFoundError/.test(err);
             resolve({ ok: false, missing, error: (gotAny ? '' : 'Không chạy được Python. ') + err.trim().slice(-300) });
         });
@@ -420,18 +510,25 @@ async function syncApply(event, payload) {
             if (!cam) { skipped++; continue; }
             let ref = refItems.get(r.ref);
             if (!ref) { ref = await itemOf(r.ref); if (ref) refItems.set(r.ref, ref); }
-            const len = Math.max(1, Math.round((r.duration || 1) * fps));
-            const cinfo = { mediaPoolItem: cam, recordFrame: pos, trackIndex: 1 };
+            // Dat NGUYEN clip (startFrame 0, endFrame = Frames, khong tinh) de In/Out trong Media Pool khong cat clip (bai hoc 08/11)
+            let camFrames = parseInt(await cam.GetClipProperty('Frames'), 10);
+            if (!(camFrames > 0)) camFrames = Math.max(1, Math.round((r.duration || 1) * (parseFloat(await cam.GetClipProperty('FPS')) || fps)));
+            const cinfo = { mediaPoolItem: cam, startFrame: 0, endFrame: camFrames, recordFrame: pos, trackIndex: 1 };
             if (!keepCam) cinfo.mediaType = 1;
             const added = await mp.AppendToTimeline([cinfo]);
             if (!added || !added.length) { skipped++; continue; }
+            // Do dai thuc tren timeline (frame timeline), lay tu item vua dat. Dung GetDuration, khong dung GetEnd (da do ben VideoAI)
+            let len = 0;
+            try { len = await added[0].GetDuration(); } catch (e) {}
+            if (!(len > 0)) len = Math.max(1, Math.round((r.duration || 1) * fps));
             if (ref) {
                 let off = r.offset;                       // giay trong file Audio Sync ung voi giay 0 cua clip
-                let rec = pos;
-                if (off < 0) { rec += Math.round(-off * fps); off = 0; }
+                let rec = pos, refLen = len;
+                if (off < 0) { const sh = Math.round(-off * fps); rec += sh; refLen -= sh; off = 0; }
                 const sf = Math.round(off * fps);
-                await mp.AppendToTimeline([{ mediaPoolItem: ref, mediaType: 2, trackIndex: audioTrack,
-                    startFrame: sf, endFrame: sf + len - 1, recordFrame: rec }]);
+                // File audio: startFrame/endFrame theo frame timeline, endFrame khong tinh
+                if (refLen > 0) await mp.AppendToTimeline([{ mediaPoolItem: ref, mediaType: 2, trackIndex: audioTrack,
+                    startFrame: sf, endFrame: sf + refLen, recordFrame: rec }]);
             }
             placed++;
             pos += len;
@@ -460,6 +557,8 @@ const MC_REC_COLOR = 'Teal', MC_REC_LOW_COLOR = 'Navy';
 const MC_VIDEO_EXTS = ['.mp4', '.mov', '.mxf', '.mts', '.m2ts', '.avi', '.mkv', '.braw', '.r3d'];
 // Dau Tilt cua hang tren trong luoi 2x2 (+1: Tilt duong dua khung len tren). Da thu tren Resolve that.
 const MC_TILT_TOP = 1;
+// Luoi chia man hinh theo so may: 2 may 2x1, 3-4 may 2x2, 5-6 may 3x2, 7-9 may 3x3
+function mcGrid(n) { return n <= 2 ? [2, 1] : n <= 4 ? [2, 2] : n <= 6 ? [3, 2] : [3, 3]; }
 let mcChild = null;
 
 function sendMc(o) { try { mainWindow.webContents.send('mc:event', o); } catch (e) {} }
@@ -484,10 +583,11 @@ function runMcOnce(cmd, script, cfgFile, outFile) {
             }
         });
         child.stderr.on('data', d => { err += d; });
-        child.on('close', () => {
+        child.on('close', code => {
             mcChild = null;
             if (finished) return resolve({ ok: true });
             if (child.killed) return resolve({ ok: false, cancelled: true });
+            if (isStoreStub(code, err)) return resolve({ spawnFailed: true });
             const missing = /No module named|ModuleNotFoundError/.test(err);
             resolve({ ok: false, missing, error: err.trim().slice(-300) || 'Python dừng giữa chừng.' });
         });
@@ -691,12 +791,15 @@ async function mcBuild(event, p) {
         if (p.hasRec) await tl.SetTrackName('audio', recTrack, 'Recorder');
         if (lowOn) await tl.SetTrackName('audio', lowTrack, 'Recorder -12dB');
 
-        // vi tri khi chia man hinh: 2 may trai/phai, 3-4 may luoi 2x2
+        // vi tri khi chia man hinh: 2 may trai/phai, 3-4 may 2x2, 5-6 may 3x2, 7-9 may 3x3 (giu ti le khung hinh)
+        // Cong thuc cho 2 va 4 may cho dung so da thu tren Resolve that (Pan +-W/4, Tilt +-H/4, Zoom 0.5)
         const place = cam => {
             if (!p.split || nv < 2) return null;
-            const pan = (cam % 2 ? 1 : -1) * W / 4;
-            const tilt = nv === 2 ? 0 : (cam < 2 ? 1 : -1) * MC_TILT_TOP * H / 4;
-            return { ZoomX: 0.5, ZoomY: 0.5, Pan: pan, Tilt: tilt };
+            const [cols, rowsN] = mcGrid(nv), z = 1 / Math.max(cols, rowsN);
+            const col = cam % cols, row = Math.floor(cam / cols);
+            const pan = (col - (cols - 1) / 2) * W / cols;
+            const tilt = ((rowsN - 1) / 2 - row) * MC_TILT_TOP * H / rowsN;
+            return { ZoomX: z, ZoomY: z, Pan: pan, Tilt: tilt };
         };
 
         const base = (await tl.GetStartFrame()) || 0;
@@ -824,12 +927,8 @@ app.whenReady().then(() => {
     ipcMain.handle('lib:scan', scanFolder);
     ipcMain.handle('lib:analyze', analyzeFiles);
     ipcMain.handle('lib:exists', (e, d) => fs.existsSync(d));
-    ipcMain.handle('lib:read', (e, p) => {
-        try {
-            if (fs.statSync(p).size > 80 * 1024 * 1024) return { ok: false, tooBig: true };
-            return { ok: true, data: fs.readFileSync(p) };
-        } catch (err) { return { ok: false }; }
-    });
+    ipcMain.handle('lib:peaks', wavePeaks);
+    ipcMain.handle('lib:savePeaks', waveSave);
     ipcMain.handle('lib:pickFolder', async (e, title = 'Chọn thư mục') => {
         const r = await dialog.showOpenDialog(mainWindow, { title, properties: ['openDirectory'] });
         return r.canceled || !r.filePaths.length ? null : r.filePaths[0];
@@ -837,13 +936,6 @@ app.whenReady().then(() => {
     ipcMain.handle('lib:trash', async (e, p) => {
         try { if (fs.existsSync(p)) await shell.trashItem(p); return { ok: true }; }
         catch (err) { return { ok: false, error: 'Không xóa được file: ' + err.message }; }
-    });
-    ipcMain.handle('lib:stat', (e, paths) => {
-        const out = {};
-        for (const p of paths) {
-            try { const s = fs.statSync(p); out[p] = Math.round(s.birthtimeMs || s.mtimeMs); } catch (err) {}
-        }
-        return out;
     });
     ipcMain.handle('sync:run', syncRun);
     ipcMain.handle('sync:cancel', syncCancel);

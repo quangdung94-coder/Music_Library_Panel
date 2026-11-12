@@ -4,7 +4,7 @@ title Cai dat Music Library cho DaVinci Resolve
 net session >nul 2>&1
 if %errorlevel% neq 0 (
   echo Dang xin quyen Administrator, hay bam Yes khi Windows hoi...
-  powershell -NoProfile -Command "Start-Process -FilePath %~f0 -Verb RunAs"
+  powershell -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
   exit /b
 )
 set "SRC=%~dp0Music_Library_Plugin"
@@ -15,6 +15,7 @@ if not exist "%RES%" goto noresolve
 if not exist "%NODE%" goto nonode
 mkdir "%DEST%" 2>nul
 xcopy "%SRC%\*" "%DEST%\" /E /I /Y >nul
+if exist "%DEST%\__pycache__" rmdir /s /q "%DEST%\__pycache__"
 copy /Y "%NODE%" "%DEST%\WorkflowIntegration.node" >nul
 echo.
 echo CAI DAT XONG.

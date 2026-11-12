@@ -347,7 +347,7 @@ main.sync #syncView{display:flex}
       <div class="sy-box">
         <div class="sy-h"><h4>1. Máy quay</h4><button class="chip" id="mcAuto" title="Lấy cả bin đang mở rồi tự tách máy theo tiền tố tên file (DG…, BAO HQ…) hoặc theo thư mục chứa file">Tự chia theo tên file</button></div>
         <div id="mcCams"></div>
-        <button class="chip mc-add" id="mcAdd">+ Thêm máy (tối đa 4)</button>
+        <button class="chip mc-add" id="mcAdd">+ Thêm máy (tối đa 9)</button>
       </div>
       <div class="sy-box">
         <h4>2. Cách ghép &amp; tuỳ chọn</h4>
@@ -359,7 +359,7 @@ main.sync #syncView{display:flex}
           <label class="mc-chk" id="mcClockRow"><input type="checkbox" id="mcClock" checked><span>Dùng giờ máy đã chỉnh cho clip không khớp audio<small>Độ lệch mỗi máy tự đo từ các cặp khớp audio. Tắt: clip lẻ xen theo số tên file, tô cam.</small></span></label>
           <div class="mc-sws">
             <div class="mc-sw"><button class="sw" role="switch" id="mcGaps" aria-checked="true" aria-label="Gap lại"></button><div><b>Gap lại (bỏ khoảng trống)</b><small>Tắt: giữ khoảng cách thật giữa các đoạn</small></div></div>
-            <div class="mc-sw"><button class="sw" role="switch" id="mcSplit" aria-checked="true" aria-label="Chia màn hình"></button><div><b>Chia màn hình</b><small>2 máy: trái / phải · 3–4 máy: lưới 2×2 · Tắt: đầy khung</small></div></div>
+            <div class="mc-sw"><button class="sw" role="switch" id="mcSplit" aria-checked="true" aria-label="Chia màn hình"></button><div><b>Chia màn hình</b><small>2 máy: trái / phải · 3–4 máy: 2×2 · 5–6 máy: 3×2 · 7–9 máy: 3×3 · Tắt: đầy khung</small></div></div>
           </div>
           <div class="mc-names">
             <label>Tên timeline<input id="mcName" placeholder="multicam_…"></label>
@@ -433,6 +433,7 @@ let CUR_TAB = "music"; // "music" hoac "sfx"
 let PLAYING = null, WAVE = {peaks:null, loading:false, key:null};
 let ROOT_MUSIC = "D:\\02_music", TRACKS_MUSIC = [];
 let ROOT_SFX = "D:\\03_sfx", TRACKS_SFX = [];
+let SFX_CARRY = null;   // muc SFX cu, mang sang khi doi thu muc (xem nut 📁)
 
 // Che do Highlight
 let HIGHLIGHT_ENABLED = true;
@@ -485,7 +486,7 @@ const esc = s => String(s||"").replace(/[&<>"]/g, c=>({ "&":"&amp;","<":"&lt;","
 const src = p => { p=p.replace(/\\/g,"/"); const parts=p.split("/").map((x,i)=> (i===0 && /^[A-Za-z]:$/.test(x)) ? x : encodeURIComponent(x)); return "file://" + (p.startsWith("/") ? "" : "/") + parts.join("/"); };
 const toRel = (p,r) => { p=p.replace(/\\/g,"/"); r=(r||"").replace(/\\/g,"/").replace(/\/+$/,""); return p.toLowerCase().startsWith(r.toLowerCase()+"/") ? p.slice(r.length+1) : p; };
 const full = (t, tab) => {
-  const root = (tab === "sfx" || CUR_TAB === "sfx") ? ROOT_SFX : ROOT_MUSIC;
+  const root = (tab ? tab === "sfx" : CUR_TAB === "sfx") ? ROOT_SFX : ROOT_MUSIC;
   if (!t || !t.rel) return "";
   const win = /^[A-Za-z]:/.test(root) || root.includes("\\");
   const absolute = /^[A-Za-z]:/.test(t.rel) || t.rel.startsWith("/");
@@ -707,6 +708,20 @@ function render(){
   }).join("");
 }
 
+// Chi cap nhat dong dang phat va dong vua dung (khong ve lai ca danh sach)
+function markPlaying(){
+  const S = getActiveState();
+  const listEl = $("#list");
+  listEl.querySelectorAll(".row.on").forEach(r=>{
+    if(+r.dataset.i !== S.cur){ r.classList.remove("on"); const b=r.querySelector(".pb"); if(b) b.textContent="▶"; }
+  });
+  if(S.cur < 0) return;
+  const r = listEl.querySelector(`.row[data-i="${S.cur}"]`);
+  if(!r) return;
+  r.classList.add("on");
+  const b = r.querySelector(".pb"); if(b) b.textContent = au.paused ? "▶" : "❚❚";
+}
+
 function toast(m,ok){
   const e=$("#toast"); e.className=ok?"ok":""; e.textContent=m; e.style.display="block";
   clearTimeout(toast.t); toast.t=setTimeout(()=>e.style.display="none",4000);
@@ -751,7 +766,7 @@ function play(i, forceHighlight = false){
     ? (fmtDur(t.dur, true) + " · " + (t.ext||"").slice(1))
     : ((t.bpm ? Math.round(t.bpm)+" BPM" : "chưa có BPM") + " · " + (t.level||"") + " · " + (t.ext||"").slice(1));
   $("#np small").textContent = sub;
-  render();
+  markPlaying();
   // Next/Prev: cuon danh sach toi bai dang phat
   const onRow = $("#list .row.on");
   if(onRow) onRow.scrollIntoView({block:"nearest"});
@@ -832,7 +847,7 @@ $("#list").onclick = e => {
   }
 };
 
-au.onplay = au.onpause = () => { $("#pp").textContent = au.paused ? "▶" : "❚❚"; render(); };
+au.onplay = au.onpause = () => { $("#pp").textContent = au.paused ? "▶" : "❚❚"; markPlaying(); };
 au.onended = () => step(1);
 au.onerror = () => toast("Không phát được file. Kiểm tra file còn trên ổ cứng.");
 au.ontimeupdate = () => {
@@ -885,6 +900,7 @@ $("#reset").onclick = () => {
 };
 
 document.addEventListener("keydown", e => {
+  if(SYNC_ON || e.ctrlKey || e.altKey || e.metaKey) return;   // chi nhan phim o tab Nhac/SFX
   if(e.code==="Space" && !/INPUT|TEXTAREA|SELECT|BUTTON/.test(e.target.tagName)){
     e.preventDefault();
     $("#pp").click();
@@ -914,9 +930,20 @@ function applyClass(t){
   const raw = 0.602*(t.rms||-20) + 0.00029*(t.cen||1500) + 0.145;
   t.en = Math.round(Math.min(100, Math.max(0, (raw+15.478)/8.875*100)));
   t.level = t.en < 35 ? "Thấp" : t.en < 70 ? "Trung bình" : "Cao";
-  if(CUR_TAB === "music"){
+  if(TRACKS_MUSIC.includes(t)){
     t.moods = TAG_RULES.filter(r=>r.when(t)).map(r=>r.tag);
   }
+}
+
+// Gom luu file + ve lai khi phan tich nhieu file (tranh ghi library.json va ve lai danh sach sau moi file)
+let _anSaveT = null, _anRenderT = null;
+function anFlush(){
+  clearTimeout(_anSaveT); clearTimeout(_anRenderT); _anSaveT = _anRenderT = null;
+  persist(); render();
+}
+function anSchedule(){
+  if(!_anRenderT) _anRenderT = setTimeout(() => { _anRenderT = null; render(); }, 400);
+  clearTimeout(_anSaveT); _anSaveT = setTimeout(() => { _anSaveT = null; persist(); }, 2000);
 }
 
 let anTotal=0, anDone=0;
@@ -934,14 +961,15 @@ if(window.musicAPI) window.musicAPI.onAnalysis(o => {
   }
   anDone++;
   toast(`Đang phân tích: ${anDone}/${anTotal}`, true);
-  persist();
-  render();
+  if(anDone >= anTotal) anFlush(); else anSchedule();
 });
 
-async function analyzeFiles(paths){
+async function analyzeFiles(paths, mode){
+  if(!paths.length) return;
   anTotal = paths.length; anDone = 0;
-  toast(`Đã thêm ${paths.length} file mới. Đang phân tích BPM & năng lượng…`, true);
-  const r = await window.musicAPI.analyze(paths);
+  toast(`Đã thêm ${paths.length} file mới. Đang phân tích ${mode==="sfx" ? "năng lượng" : "BPM & năng lượng"}…`, true);
+  const r = await window.musicAPI.analyze(paths, mode);
+  anFlush();
   toast(r.ok ? `Xong: đã phân tích ${anDone}/${anTotal} file mới.` : r.error, r.ok);
 }
 
@@ -953,13 +981,19 @@ $("#scan").onclick = async () => {
   
   toast(`Đang quét thư mục ${isSfx ? 'SFX' : 'nhạc'}…`, true);
   const r = await window.musicAPI.scan(root, list.map(t=>full(t, CUR_TAB)));
-  if(!r.ok){ toast(r.error); return; }
-  if(!r.files || !r.files.length){ toast("Không có file mới nào trong thư mục.", true); return; }
+  if(!r.ok){ toast(r.error); return; }          // quet loi: giu SFX_CARRY de lan quet sau van mang duoc tag cu
+  const carry = isSfx ? SFX_CARRY : null; if(isSfx) SFX_CARRY = null;
+  if(!r.files || !r.files.length){ if(carry){ render(); persist(); } toast("Không có file mới nào trong thư mục.", true); return; }
 
+  const toAnalyze = [];
   for(const f of r.files){
+    const rel = toRel(f.path, root);
+    const old = carry && carry.get(rel.toLowerCase());
+    if(old){ list.push(old); continue; }          // file cu (cung duong dan con): giu tag, yeu thich, In/Out, nang luong
+    toAnalyze.push(f.path);
     const d = Math.round((await getDur(f.path))*10)/10;
     const item = {
-      rel: toRel(f.path, root),
+      rel,
       title: f.title,
       ext: f.ext,
       dur: d,
@@ -974,11 +1008,11 @@ $("#scan").onclick = async () => {
       highlight: null
     };
     list.push(item);
-    prepTracks(list);
-    render();
   }
+  prepTracks(list);
+  render();
   persist();
-  analyzeFiles(r.files.map(f=>f.path));
+  analyzeFiles(toAnalyze, isSfx ? "sfx" : "music");
 };
 
 let delIdx = -1;
@@ -1036,7 +1070,23 @@ $("#pick").onclick = async () => {
   const isSfx = (CUR_TAB === "sfx");
   const p = await window.musicAPI.pickFolder(isSfx ? "Chọn thư mục Sound Effects (SFX)" : "Chọn thư mục nhạc (Music)");
   if(!p) return;
-  if(isSfx){ ROOT_SFX = p; } else { ROOT_MUSIC = p; }
+  if(isSfx){
+    // Chi dung 1 thu muc SFX: doi thu muc la bo danh sach cu roi quet lai thu muc moi.
+    // File trung duong dan con (vi du chuyen nguyen thu muc sang o khac) giu lai tag, yeu thich, In/Out.
+    const same = ROOT_SFX.replace(/[\\\/]+$/,"").toLowerCase() === p.replace(/[\\\/]+$/,"").toLowerCase();
+    ROOT_SFX = p;
+    if(!same && TRACKS_SFX.length){
+      SFX_CARRY = new Map(TRACKS_SFX.filter(t=>t.rel && !/^[A-Za-z]:|^\//.test(t.rel)).map(t=>[t.rel.replace(/\\/g,"/").toLowerCase(), t]));
+      const n = TRACKS_SFX.length;
+      if(PLAYING && PLAYING.tab === "sfx"){ au.pause(); au.removeAttribute("src"); PLAYING = null; WAVE.peaks = null; drawWave(); updateIO();
+        $("#np").firstChild.nodeValue = "Chọn một bài để nghe"; $("#np small").textContent = ""; }
+      TRACKS_SFX.length = 0; SS.cur = -1; SS.dir = ""; SS.open.clear();
+      showRoot(); render(); await persist(); checkRoot();
+      toast(`Đã đổi thư mục SFX: ${p}. Bỏ ${n} mục của thư mục cũ, đang quét thư mục mới…`, true);
+      if(await window.musicAPI.dirExists(p)) $("#scan").click();
+      return;
+    }
+  } else { ROOT_MUSIC = p; }
   showRoot();
   await persist();
   checkRoot();
@@ -1103,8 +1153,15 @@ async function loadWave(p){
   WAVE.key=p; WAVE.peaks=peaksCache.get(p)||null; WAVE.loading=!WAVE.peaks; drawWave();
   if(WAVE.peaks || !window.musicAPI) return;
   try{
-    const r=await window.musicAPI.readFile(p);
-    if(!r || !r.ok){ if(WAVE.key===p){ WAVE.loading=false; drawWave(); } return; }
+    // main.js tinh san song am (WAV doc thang, khong gioi han dung luong) va luu cache tren dia
+    const r=await window.musicAPI.peaks(p);
+    if(r && r.ok && r.peaks){
+      const pk=Float32Array.from(r.peaks);
+      peaksCache.set(p,pk); if(peaksCache.size>25) peaksCache.delete(peaksCache.keys().next().value);
+      if(WAVE.key===p){ WAVE.peaks=pk; WAVE.loading=false; drawWave(); }
+      return;
+    }
+    if(!r || !r.ok || !r.data){ if(WAVE.key===p){ WAVE.loading=false; drawWave(); } return; }
     const ac=new (window.AudioContext||window.webkitAudioContext)();
     const u=r.data, ab=await ac.decodeAudioData(u.buffer.slice(u.byteOffset, u.byteOffset+u.byteLength));
     ac.close();
@@ -1112,6 +1169,7 @@ async function loadWave(p){
     let mx=0.0001;
     for(let i=0;i<N;i++){ let m=0; const e=Math.min(ch.length,(i+1)*step); for(let j=i*step;j<e;j+=skip){ const v=Math.abs(ch[j]); if(v>m) m=v; } pk[i]=m; if(m>mx) mx=m; }
     for(let i=0;i<N;i++) pk[i]/=mx;
+    try{ window.musicAPI.savePeaks(p, Array.from(pk, v=>Math.round(v*1000)/1000)); }catch(e){}
     peaksCache.set(p,pk); if(peaksCache.size>25) peaksCache.delete(peaksCache.keys().next().value);
     if(WAVE.key===p){ WAVE.peaks=pk; WAVE.loading=false; drawWave(); }
   }catch(e){ if(WAVE.key===p){ WAVE.loading=false; drawWave(); } }
@@ -1136,6 +1194,7 @@ function setIO(kind){
 $("#btnIn").onclick=()=>setIO("in"); $("#btnOut").onclick=()=>setIO("out");
 $("#btnClr").onclick=()=>{ const t=PLAYING && PLAYING.t; if(!t) return; t.inT=null; t.outT=null; persist(); updateIO(); drawWave(); render(); };
 document.addEventListener("keydown", e => {
+  if(SYNC_ON || e.ctrlKey || e.altKey || e.metaKey) return;   // chi nhan phim o tab Nhac/SFX
   if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
   if(e.key==="i"||e.key==="I") setIO("in"); else if(e.key==="o"||e.key==="O") setIO("out");
 });
@@ -1222,7 +1281,9 @@ function applySyncMode(){
 syRender();
 
 // ================= AUDIO SYNC: NHIEU MAY QUAY =================
-const CAMCOL = ["#2b4d73","#6b4a8a","#2e6b5a","#7a5a2a"];
+const CAMCOL = ["#2b4d73","#6b4a8a","#2e6b5a","#7a5a2a","#7a2e3c","#2d6470","#5a6b2a","#4a4f8a","#6b5a4a"];
+const MC_MAX = 9;   // toi da 9 may (luoi 3x3)
+const mcGrid = n => n <= 2 ? [2,1] : n <= 4 ? [2,2] : n <= 6 ? [3,2] : [3,3];
 const mcEmpty = () => ({name:"", paths:[], src:""});
 // rec: cac ban ghi Recorder [{main: ban thuong, low: ban -12dB hoac null}]
 let MC = {cams:[mcEmpty(), mcEmpty()], rec:[], recLow:false, method:"audio", clock:true, gaps:true, split:true, rows:[], summary:null, busy:false};
@@ -1265,7 +1326,9 @@ function mcPos(i){
   const n = MC.cams.length;
   if(!MC.split || n < 2) return "đầy khung";
   if(n === 2) return i ? "bên phải" : "bên trái";
-  return ["trên-trái","trên-phải","dưới-trái","dưới-phải"][i];
+  if(n <= 4) return ["trên-trái","trên-phải","dưới-trái","dưới-phải"][i];
+  const [c] = mcGrid(n);
+  return `hàng ${Math.floor(i/c)+1}, cột ${i%c+1}`;
 }
 function mcLog(m){ const l=$("#mcLog"); l.textContent += m+"\n"; l.scrollTop=l.scrollHeight; }
 function fmtPos(s){
@@ -1308,7 +1371,7 @@ function mcRender(){
         ${MC.rec.some(r=>r.low) ? `<label class="mc-low"><input type="checkbox" data-a="reclow" ${MC.recLow?"checked":""}> Kèm bản -12dB ở A${n+2} (màu Navy)</label>` : ""}</div>
       <div class="mc-acts"><button class="chip" data-a="recsel">Clip đang chọn</button><button class="chip" data-a="recbin">Cả bin</button><button class="chip" data-a="recfile">File…</button>${MC.rec.length?`<button class="chip" data-a="recclr" aria-label="Xóa file Recorder">✕</button>`:""}</div>
     </div>`;
-  $("#mcAdd").style.display = n >= 4 ? "none" : "";
+  $("#mcAdd").style.display = n >= MC_MAX ? "none" : "";
   $("#mcByTc").setAttribute("aria-pressed", MC.method==="tc");
   $("#mcByAu").setAttribute("aria-pressed", MC.method==="audio");
   $("#mcClockRow").classList.toggle("off", MC.method==="tc");
@@ -1377,7 +1440,7 @@ $("#mcCams").onchange = e=>{
   MC.cams[+e.target.closest(".mc-row").dataset.i].name = e.target.value.trim();
   mcRender();
 };
-$("#mcAdd").onclick = ()=>{ if(MC.cams.length < 4){ MC.cams.push(mcEmpty()); mcStale(); } };
+$("#mcAdd").onclick = ()=>{ if(MC.cams.length < MC_MAX){ MC.cams.push(mcEmpty()); mcStale(); } };
 $("#mcAuto").onclick = async ()=>{
   if(mcNeedApi()) return;
   const r = await musicAPI.mcBin({deep:true}); if(!r.ok) return toast(r.error);
@@ -1390,8 +1453,8 @@ $("#mcAuto").onclick = async ()=>{
   if(groups.length < 2) groups = by(p=>mcPrefix(p).toLowerCase());
   if(groups.length < 2) groups = by(p=>dir(p).toLowerCase());
   if(groups.length < 2) return toast("Không tách được máy: mọi clip trong bin cùng tiền tố tên file và cùng thư mục.");
-  if(groups.length > 4) toast(`Bin có ${groups.length} nhóm tên file, chỉ lấy 4 nhóm nhiều clip nhất.`);
-  MC.cams = groups.slice(0,4).map(ps=>({name: mcGuessName(ps) || syName(dir(ps[0])), paths: ps,
+  if(groups.length > MC_MAX) toast(`Bin có ${groups.length} nhóm tên file, chỉ lấy ${MC_MAX} nhóm nhiều clip nhất.`);
+  MC.cams = groups.slice(0,MC_MAX).map(ps=>({name: mcGuessName(ps) || syName(dir(ps[0])), paths: ps,
     src: "Bin " + r.binPath + (subOf.get(ps[0]) ? " / " + subOf.get(ps[0]) : "")}));
   if(auds.length) MC.rec = recPair(auds);
   mcDefName(r); mcStale();
@@ -1457,7 +1520,7 @@ function setSyMode(m){
   $("#syMcPane").style.display = mc ? "" : "none";
   $("#syModeRec").setAttribute("aria-pressed", !mc);
   $("#syModeMc").setAttribute("aria-pressed", mc);
-  $("#syModeHint").textContent = mc ? "Ghép 2–4 máy không chung timecode, xếp liền trên một timeline"
+  $("#syModeHint").textContent = mc ? "Ghép 2–9 máy không chung timecode, xếp liền trên một timeline"
                                     : "Ghép file Recorder (bất kỳ máy ghi âm nào) vào đúng chỗ clip máy quay";
   try{ localStorage.setItem("syMode", m); }catch(e){}
 }

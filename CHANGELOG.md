@@ -1,5 +1,47 @@
 # Nhật ký thay đổi
 
+## 12/11/2026 (trưa) – Các mục anh duyệt + Multicam tới 9 máy
+- Tab SFX chỉ dùng một thư mục: chọn thư mục SFX khác thì bỏ danh sách cũ và tự quét thư mục mới. File trùng đường dẫn con
+  (chuyển nguyên thư mục sang ổ khác) giữ tag, yêu thích, In/Out, năng lượng và không phân tích lại. Tab Nhạc giữ như cũ.
+- Phân tích tab SFX chỉ đo năng lượng (`analyze_music.py` chế độ `sfx`, đọc tối đa 30 giây, bỏ BPM/Highlight).
+  File danh sách gửi cho Python giờ là `{"mode", "paths"}`; danh sách kiểu cũ vẫn đọc được.
+- Windows: thử `py -3` trước `python`; nhận ra lệnh `python` giả của Microsoft Store (mã 9009) thì thử lệnh kế tiếp,
+  áp dụng cho phân tích BPM, Audio Sync và Multicam.
+- Phím Space / I / O chỉ nhận ở tab Nhạc/SFX, bỏ qua khi giữ Ctrl/Alt/Cmd.
+- Phát / dừng / Next chỉ cập nhật dòng đang phát và dòng vừa dừng (`markPlaying`), không vẽ lại cả danh sách.
+- Sóng âm: `main.js` tính 1000 điểm (`lib:peaks`). WAV/BWF PCM 16/24/32-bit và float đọc thẳng từ đĩa, không giới hạn
+  dung lượng. File khác ≤ 80MB vẫn giải mã ở giao diện rồi gửi lại điểm để lưu. Cache ở `Documents\MusicPanel\wave_cache`.
+  Bỏ IPC `lib:read` / `readFile`.
+- Multicam: tối đa 9 máy (nút "+ Thêm máy", "Tự chia theo tên file" lấy tới 9 nhóm). Chia màn hình 2×1, 2×2, 3×2, 3×3,
+  giữ tỉ lệ khung. Số cho 2 và 4 máy giữ đúng như đã thử trên Resolve thật; 5–9 máy chưa thử trên Resolve.
+- Đã thử: trình đọc sóng âm WAV với file giả (16-bit stereo, 24-bit có chunk bext, float extensible); cú pháp JS/Python.
+  Chưa thử trên Resolve thật: đổi thư mục SFX, sóng âm, Multicam 5+ máy.
+- Rà lại bằng Claude Code (12/11 chiều), sửa thêm 2 chỗ:
+  - `syncApply`: độ dài clip vừa đặt lấy bằng `GetDuration()` thay vì `GetEnd() - GetStart()` (bên VideoAI đã đo: không dùng `GetEnd`).
+  - Đổi thư mục SFX: nếu lần quét thư mục mới bị lỗi thì vẫn giữ danh sách mục cũ (`SFX_CARRY`) cho lần quét sau, không mất tag.
+  - Kiểm tra: biên dịch thử main.js / preload.js / script index.html, `py_compile` 4 file .py; chạy thử `analyze_music.py`
+    chế độ `sfx` trên 2 file trong `D:\05_Tonal SFX` (879 file) và danh sách kiểu cũ; số Pan/Tilt/Zoom của lưới 2 và 4 máy
+    đúng như đã thử trên Resolve (∓480 / ±270 / 0.5). Đã chép main.js, preload.js, index.html, analyze_music.py vào thư mục plugin.
+
+## 12/11/2026 – Rà soát toàn bộ dự án, sửa các lỗi chắc chắn
+- `main.js` – chế độ "Recorder → máy quay" (`syncApply`):
+  - Đặt NGUYÊN clip máy quay (`startFrame 0`, `endFrame = Frames`), giống Multicam. Trước đây clip có In/Out trong
+    Media Pool bị cắt ngắn, nên audio Recorder lệch và timeline có khoảng trống.
+  - Vị trí clip kế tiếp lấy theo độ dài thật của clip vừa đặt (`GetEnd - GetStart`), không ước lượng từ giây.
+  - Đoạn Recorder: `endFrame` không tính (trước thiếu 1 frame); khi offset âm thì rút ngắn đoạn Recorder đúng phần đẩy lùi
+    để không lấn sang clip sau.
+  - Xóa code thừa: hàm `findClip()` và IPC `lib:stat` / `fileTimes` (không chỗ nào dùng).
+- `index.html`:
+  - `full(t, tab)`: khi gọi `full(x, "music")` lúc đang ở tab SFX trước đây vẫn ghép theo thư mục SFX → kết quả phân tích BPM
+    của bài nhạc không khớp được nếu anh chuyển sang tab SFX trong lúc đang phân tích. Giờ theo đúng tab truyền vào.
+  - `applyClass`: gắn mood theo việc file thuộc danh sách Nhạc, không theo tab đang mở.
+  - Quét thư mục: vẽ lại danh sách một lần sau khi thêm hết file (trước vẽ lại sau từng file, rất chậm với 879 SFX).
+  - Phân tích: gom lưu `library.json` (2 giây) và vẽ lại (0,4 giây) thay vì ghi file + vẽ lại sau từng file; lưu chắc chắn khi xong.
+- `install_windows.bat`: thêm dấu nháy cho đường dẫn khi xin quyền Admin (đường dẫn có dấu cách như "Kho dữ liệu" trước đây
+  có thể không mở lại được); xóa `__pycache__` nếu lỡ bị chép vào thư mục plugin.
+- `CLAUDE.md`: cập nhật thư mục SFX hiện dùng là `D:\05_Tonal SFX`.
+- Chưa kiểm tra trên Resolve thật: cần thử lại chế độ "Recorder → máy quay" với clip có In/Out.
+
 ## 08/11/2026 (tối) – Đóng gói bản v3
 - Tạo 2 bản zip từ code hiện tại, lưu ở `E:\Kho dữ liệu\Tài nguyên\` (KHÔNG đưa vào repo):
   - `Music_Library_Panel_v3.zip`: bản đầy đủ, giữ sẵn danh sách 227 bài (biến `SEED` trong `index.html`, giống bản v2 đầy đủ).

@@ -22,13 +22,13 @@ Panel Workflow Integration cho DaVinci Resolve Studio: thư viện nhạc/SFX (t
 - Windows, DaVinci Resolve Studio 21. GitHub CLI: `C:\Program Files\GitHub CLI\gh.exe` (Bash không có trong PATH).
 - Thư mục plugin đã cài: `C:\ProgramData\Blackmagic Design\DaVinci Resolve\Support\Workflow Integration Plugins\Music_Library_Plugin`
 - Dữ liệu panel: `Documents\MusicPanel\library.json` (không đưa lên Git).
-- Thư mục nhạc máy chính: `D:\02_music`, SFX: `D:\03_sfx`.
+- Thư mục nhạc máy chính: `D:\02_music`, SFX: `D:\05_Tonal SFX` (trước 11/2026 là `D:\03_sfx`). Bin trong Resolve vẫn tên `02_music` / `03_sfx`.
 
 ## Cấu trúc
 - `main.js`: Resolve API (import Media Pool/Timeline, chặn trùng, Audio Sync tạo timeline), quét thư mục, gọi Python.
 - `preload.js`: cầu nối `window.musicAPI`. `index.html`: toàn bộ giao diện 3 tab.
-- `analyze_music.py` (librosa): BPM, năng lượng, highlight. `sync_engine.py` + `sync_runner.py` (numpy, imageio-ffmpeg): Audio Sync.
-- `multicam_sync.py`: chế độ "Nhiều máy quay" (ghép 2–4 máy bằng audio, dùng `sync_engine.py`). Ngưỡng đã chỉnh theo dữ liệu thật 08/11, không đổi khi chưa hỏi.
+- `analyze_music.py` (librosa): BPM, năng lượng, highlight; chế độ `sfx` chỉ đo năng lượng. Sóng âm tính ở `main.js` (`lib:peaks`, cache `Documents\MusicPanel\wave_cache`). `sync_engine.py` + `sync_runner.py` (numpy, imageio-ffmpeg): Audio Sync.
+- `multicam_sync.py`: chế độ "Nhiều máy quay" (ghép 2–9 máy bằng audio, dùng `sync_engine.py`). Ngưỡng đã chỉnh theo dữ liệu thật 08/11, không đổi khi chưa hỏi.
   `main.js`: `mc:run` (chạy Python), `mc:tc` (Sync bằng timecode, chỉ JS), `mc:bin`, `mc:build` (dựng timeline), `mc:csv`.
 
 ## Thử nghiệm

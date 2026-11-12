@@ -2,7 +2,7 @@
 ======================================================================
 
 Panel có 3 tab: Nhạc, SFX và Audio Sync. Tab Audio Sync có 2 chế độ:
-"Recorder → máy quay" và "Nhiều máy quay" (ghép 2–4 máy quay + file Recorder lên một timeline).
+"Recorder → máy quay" và "Nhiều máy quay" (ghép 2–9 máy quay + file Recorder lên một timeline).
 "Recorder" là file của máy ghi âm rời (máy nào cũng được).
 
 YÊU CẦU
@@ -96,8 +96,8 @@ PHẦN 5. TAB AUDIO SYNC (ghép tiếng thu rời vào clip máy quay)
 ------------------------------------------------------------------
 Tab "Audio Sync" có 2 chế độ (nút ở đầu tab):
 - "Recorder → máy quay": ghép file máy ghi âm rời (Recorder) vào đúng vị trí của clip máy quay.
-- "Nhiều máy quay": ghép 2–4 máy quay không chung timecode lên một timeline, chia màn hình
-  trái/phải hoặc lưới 2×2 (xem mục 12 trong LUU_Y_KHI_CAI_PANEL.txt).
+- "Nhiều máy quay": ghép 2–9 máy quay không chung timecode lên một timeline, chia màn hình
+  trái/phải hoặc chia lưới (xem mục 12 trong LUU_Y_KHI_CAI_PANEL.txt).
 Tab này cần Python + thư viện ở PHẦN 4.
 
 CHẾ ĐỘ "RECORDER → MÁY QUAY"
@@ -114,7 +114,7 @@ CHẾ ĐỘ "RECORDER → MÁY QUAY"
 Nên nghe kiểm tra vài clip trước khi dùng cho việc thật.
 
 ------------------------------------------------------------------
-PHẦN 6. CHẾ ĐỘ "NHIỀU MÁY QUAY" (ghép 2–4 máy quay + Recorder)
+PHẦN 6. CHẾ ĐỘ "NHIỀU MÁY QUAY" (ghép 2–9 máy quay + Recorder)
 ------------------------------------------------------------------
 Dùng khi quay nhiều máy không chung timecode: panel tự ghép theo sóng âm, xếp liền trên một timeline.
 1. Trong Media Pool mở bin chứa clip các máy (ví dụ 02_Sync Cam, có thể có bin con Cam 1 / Cam 2),
@@ -123,7 +123,7 @@ Dùng khi quay nhiều máy không chung timecode: panel tự ghép theo sóng �
 2. Hàng Recorder (không bắt buộc): mở bin file ghi âm (ví dụ 07_audio) rồi bấm "Cả bin".
    Panel tự ghép cặp bản thường và bản -12dB, hiện ví dụ "6 bản ghi · 12 file (thường + -12dB)".
 3. Chọn cách ghép: "Sync bằng audio" (thường dùng) hoặc "Sync bằng timecode" (khi các máy chung timecode).
-4. Công tắc "Gap lại": bỏ khoảng trống. "Chia màn hình": 2 máy trái/phải, 3–4 máy lưới 2×2.
+4. Công tắc "Gap lại": bỏ khoảng trống. "Chia màn hình": 2 máy trái/phải, 3–4 máy lưới 2×2, 5–6 máy 3×2, 7–9 máy 3×3.
 5. Đặt tên timeline (không trùng timeline đã có), bấm "Phân tích" rồi "Tạo timeline".
 Kết quả trên timeline:
 - Cam 1 ở V1/A1, Cam 2 ở V2/A2… Màu clip: xanh lá = khớp audio chắc, xanh nhạt = khớp vừa (nên nghe lại),

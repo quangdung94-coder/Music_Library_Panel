@@ -32,6 +32,8 @@
 - Panel báo "Không tìm thấy thư mục nhạc" là bình thường (ổ D: có thể không có trên máy mới).
 - Bấm nút có biểu tượng thư mục ở đầu danh sách để chọn lại thư mục:
   tab Nhạc chọn thư mục nhạc, tab SFX chọn thư mục SFX.
+- Tab SFX chỉ dùng MỘT thư mục SFX: chọn thư mục SFX khác thì panel bỏ danh sách thư mục cũ và tự quét thư mục mới.
+  File nằm cùng chỗ bên trong (ví dụ chuyển nguyên thư mục sang ổ khác) vẫn giữ tag, yêu thích, In/Out.
 - Bên trong thư mục nhạc/SFX nên giữ nguyên cách sắp xếp thư mục con như máy cũ.
 - Bấm "Quét thư mục" để thêm file mới vào panel.
 
@@ -55,7 +57,8 @@
 - Nếu Python nằm ở chỗ khác: tạo file Documents/MusicPanel/python_path.txt chỉ chứa
   đường dẫn tới file python (một dòng duy nhất).
 - File .aac cần cài thêm ffmpeg mới phân tích được, nếu không sẽ báo "Lỗi phân tích".
-- Mỗi bài mất khoảng 2 giây để phân tích. Số BPM đôi khi lệch gấp đôi hoặc một nửa, đó là hạn chế của cách dò nhịp tự động.
+- Tab SFX chỉ đo năng lượng (không dò BPM) nên nhanh hơn nhiều.
+- Mỗi bài nhạc mất khoảng 2 giây để phân tích. Số BPM đôi khi lệch gấp đôi hoặc một nửa, đó là hạn chế của cách dò nhịp tự động.
 
 7. THAY FILE KHI CẬP NHẬT PANEL
 -------------------------------
@@ -75,7 +78,8 @@
 - Nút xóa: "Chỉ xóa khỏi panel" thì file vẫn còn trong thư mục (bấm quét sẽ thêm lại).
   "Xóa luôn file" thì file được chuyển vào Thùng rác của máy, khôi phục được.
 - File dưới 30 giây hoặc trên 15 phút trong tab Nhạc mặc định bị ẩn, bỏ tick ở bộ lọc thời lượng để hiện lại.
-- Thanh sóng âm không hiện với file lớn hơn 80MB (nhạc vẫn phát bình thường).
+- Sóng âm được lưu sẵn ở Documents\MusicPanel\wave_cache, lần sau mở bài hiện ngay. File WAV dài mấy cũng hiện;
+  file mp3/aac… lớn hơn 80MB thì không hiện sóng âm (vẫn phát bình thường).
 
 9. NẾU GẶP LỖI
 --------------
@@ -86,7 +90,6 @@
 - Nhạc không phát: kiểm tra file còn trong thư mục và đã chọn đúng thư mục gốc.
 - "Lỗi phân tích" hoặc không có BPM: kiểm tra mục 6 (Python, librosa, file aac cần ffmpeg).
 - Đoạn In/Out trên timeline bị lệch: ghi lại bài nào, lệch bao nhiêu giây để nhờ chỉnh lại.
-  (Chức năng này chưa được kiểm tra hết trên Resolve thật, nên hãy thử trên project nháp trước.)
 - Trên máy Mac, nếu bấm quét mà không phân tích được BPM: dùng file python_path.txt ở mục 6.
 
 10. LƯU Ý RIÊNG CHO MAC
@@ -102,7 +105,7 @@
 - Đầu tab có 2 chế độ:
   "Recorder → máy quay": ghép file máy ghi âm rời (Recorder, máy nào cũng được) vào clip máy quay.
     Chọn file Recorder > chọn clip máy quay > Phân tích > Tạo timeline.
-  "Nhiều máy quay": ghép 2–4 máy quay không chung timecode lên một timeline (xem mục 12).
+  "Nhiều máy quay": ghép 2–9 máy quay không chung timecode lên một timeline (xem mục 12).
 - Không cần bật "External scripting", vì chạy ngay trong panel.
 
 12. CHẾ ĐỘ NHIỀU MÁY QUAY (MULTICAM SYNC)
@@ -114,7 +117,8 @@
   bỏ tick "Dùng giờ máy đã chỉnh" thì clip lẻ xen theo số tên file (tô cam).
   Sync bằng timecode: dùng khi các máy chung timecode, đọc Start TC, gần như tức thì.
 - Gap lại: bật = bỏ khoảng trống, các đoạn nối liền; tắt = giữ khoảng cách thật.
-- Chia màn hình: 2 máy trái/phải; 3–4 máy lưới 2×2; tắt = mỗi máy đầy khung.
+- Chia màn hình: 2 máy trái/phải; 3–4 máy lưới 2×2; 5–6 máy 3×2; 7–9 máy 3×3; tắt = mỗi máy đầy khung.
+- Bấm "+ Thêm máy" để thêm máy (tối đa 9). Càng nhiều máy thì bước Phân tích càng lâu.
 - Màu clip: xanh lá = khớp audio chắc, xanh nhạt = khớp vừa (nên nghe lại), vàng = theo giờ đã chỉnh, cam = xen theo tên file.
 - Tên timeline không được trùng timeline đã có (panel báo lỗi, không ghi đè). Timeline đặt trong bin 03_timeline nếu có.
 - Panel đặt nguyên clip lên timeline, KHÔNG dùng và KHÔNG sửa điểm In/Out bạn đã đánh trong Media Pool.
