@@ -32,8 +32,10 @@
 - Panel báo "Không tìm thấy thư mục nhạc" là bình thường (ổ D: có thể không có trên máy mới).
 - Bấm nút có biểu tượng thư mục ở đầu danh sách để chọn lại thư mục:
   tab Nhạc chọn thư mục nhạc, tab SFX chọn thư mục SFX.
-- Tab SFX chỉ dùng MỘT thư mục SFX: chọn thư mục SFX khác thì panel bỏ danh sách thư mục cũ và tự quét thư mục mới.
+- Mỗi tab dùng MỘT thư mục. Chọn thư mục (kể cả chọn lại đúng thư mục đang dùng) hoặc bấm "Quét thư mục" thì panel:
+  thêm file mới và bỏ các mục không còn file trong thư mục đó (file đã xóa, hoặc file của thư mục cũ).
   File nằm cùng chỗ bên trong (ví dụ chuyển nguyên thư mục sang ổ khác) vẫn giữ tag, yêu thích, In/Out.
+  Nếu sắp bỏ hơn một nửa danh sách, panel hỏi lại trước. Ổ đĩa chưa cắm thì panel báo không thấy thư mục và không bỏ gì.
 - Bên trong thư mục nhạc/SFX nên giữ nguyên cách sắp xếp thư mục con như máy cũ.
 - Bấm "Quét thư mục" để thêm file mới vào panel.
 

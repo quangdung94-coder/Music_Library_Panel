@@ -433,7 +433,6 @@ let CUR_TAB = "music"; // "music" hoac "sfx"
 let PLAYING = null, WAVE = {peaks:null, loading:false, key:null};
 let ROOT_MUSIC = "D:\\02_music", TRACKS_MUSIC = [];
 let ROOT_SFX = "D:\\03_sfx", TRACKS_SFX = [];
-let SFX_CARRY = null;   // muc SFX cu, mang sang khi doi thu muc (xem nut 📁)
 
 // Che do Highlight
 let HIGHLIGHT_ENABLED = true;
@@ -769,7 +768,15 @@ function play(i, forceHighlight = false){
   markPlaying();
   // Next/Prev: cuon danh sach toi bai dang phat
   const onRow = $("#list .row.on");
-  if(onRow) onRow.scrollIntoView({block:"nearest"});
+  // Thanh phat nhac (footer) nam de len cuoi danh sach, nen "nearest" tuong dong da hien du ma thuc ra bi che.
+  // Tu tinh: dong bi footer che hoac nam tren mep tren thi cuon dong ve giua.
+  if(onRow){
+    const r = onRow.getBoundingClientRect();
+    const ft = document.querySelector("footer");
+    const bottom = ft ? ft.getBoundingClientRect().top : window.innerHeight;
+    const top = $("#list").getBoundingClientRect().top;
+    if(r.bottom > bottom - 4 || r.top < Math.max(0, top)) onRow.scrollIntoView({block:"center"});
+  }
 }
 
 function step(d){
@@ -973,27 +980,46 @@ async function analyzeFiles(paths, mode){
   toast(r.ok ? `Xong: đã phân tích ${anDone}/${anTotal} file mới.` : r.error, r.ok);
 }
 
-$("#scan").onclick = async () => {
+// Quet thu muc: them file moi VA bo cac muc khong con file trong thu muc dang chon (ap dung ca tab Nhac va SFX).
+// Muc bi bo: file da xoa, hoac file cua thu muc cu sau khi doi thu muc. File trung duong dan con giu nguyen tag, yeu thich, In/Out.
+async function scanTab(){
   if(!window.musicAPI){ toast("Chỉ dùng được khi mở trong DaVinci Resolve."); return; }
-  const isSfx = (CUR_TAB === "sfx");
+  const isSfx = (CUR_TAB === "sfx"), tab = CUR_TAB;
   const root = isSfx ? ROOT_SFX : ROOT_MUSIC;
-  const list = getActiveList();
-  
-  toast(`Đang quét thư mục ${isSfx ? 'SFX' : 'nhạc'}…`, true);
-  const r = await window.musicAPI.scan(root, list.map(t=>full(t, CUR_TAB)));
-  if(!r.ok){ toast(r.error); return; }          // quet loi: giu SFX_CARRY de lan quet sau van mang duoc tag cu
-  const carry = isSfx ? SFX_CARRY : null; if(isSfx) SFX_CARRY = null;
-  if(!r.files || !r.files.length){ if(carry){ render(); persist(); } toast("Không có file mới nào trong thư mục.", true); return; }
+  const list = getActiveList(), S = getActiveState();
 
+  toast(`Đang quét thư mục ${isSfx ? 'SFX' : 'nhạc'}…`, true);
+  const r = await window.musicAPI.scan(root, list.map(t=>full(t, tab)));
+  if(!r.ok){ toast(r.error); return; }
+
+  // 1. Bo muc khong con file
+  const miss = new Set((r.missing||[]).map(x=>x.toLowerCase()));
+  let removed = 0;
+  if(miss.size){
+    if(miss.size >= 20 && miss.size > list.length/2 &&
+       !confirm(`${miss.size}/${list.length} mục trong danh sách ${isSfx?'SFX':'nhạc'} không có trong thư mục ${root}.\n` +
+                `Bỏ các mục này khỏi panel? (tag, yêu thích, In/Out của chúng sẽ mất; file trên ổ không bị xóa)`)){
+      toast("Đã giữ nguyên danh sách. Kiểm tra lại thư mục đã chọn.");
+      return;
+    }
+    const playing = PLAYING && PLAYING.tab === tab ? PLAYING.t : null;
+    if(playing && miss.has(full(playing, tab).toLowerCase())){
+      au.pause(); au.removeAttribute("src"); PLAYING = null; WAVE.peaks = null; drawWave(); updateIO();
+      $("#np").firstChild.nodeValue = "Chọn một bài để nghe"; $("#np small").textContent = "";
+    }
+    const keep = list.filter(t => !miss.has(full(t, tab).toLowerCase()));
+    removed = list.length - keep.length;
+    list.length = 0; list.push(...keep);
+    if(isSfx) SS.dir = "";
+  }
+
+  // 2. Them file moi
   const toAnalyze = [];
-  for(const f of r.files){
-    const rel = toRel(f.path, root);
-    const old = carry && carry.get(rel.toLowerCase());
-    if(old){ list.push(old); continue; }          // file cu (cung duong dan con): giu tag, yeu thich, In/Out, nang luong
+  for(const f of (r.files||[])){
     toAnalyze.push(f.path);
     const d = Math.round((await getDur(f.path))*10)/10;
-    const item = {
-      rel,
+    list.push({
+      rel: toRel(f.path, root),
       title: f.title,
       ext: f.ext,
       dur: d,
@@ -1006,14 +1032,19 @@ $("#scan").onclick = async () => {
       tags: isSfx ? detectSfxTags(f.title) : [],
       added: Date.now(),
       highlight: null
-    };
-    list.push(item);
+    });
   }
   prepTracks(list);
+  S.cur = (PLAYING && PLAYING.tab === tab) ? list.indexOf(PLAYING.t) : -1;
   render();
   persist();
-  analyzeFiles(toAnalyze, isSfx ? "sfx" : "music");
-};
+  const added = toAnalyze.length;
+  toast(added || removed
+    ? `Quét xong: thêm ${added} file mới, bỏ ${removed} mục không còn file.`
+    : "Không có thay đổi: danh sách khớp với thư mục.", true);
+  if(added) analyzeFiles(toAnalyze, isSfx ? "sfx" : "music");
+}
+$("#scan").onclick = scanTab;
 
 let delIdx = -1;
 const showRoot = () => {
@@ -1070,27 +1101,13 @@ $("#pick").onclick = async () => {
   const isSfx = (CUR_TAB === "sfx");
   const p = await window.musicAPI.pickFolder(isSfx ? "Chọn thư mục Sound Effects (SFX)" : "Chọn thư mục nhạc (Music)");
   if(!p) return;
-  if(isSfx){
-    // Chi dung 1 thu muc SFX: doi thu muc la bo danh sach cu roi quet lai thu muc moi.
-    // File trung duong dan con (vi du chuyen nguyen thu muc sang o khac) giu lai tag, yeu thich, In/Out.
-    const same = ROOT_SFX.replace(/[\\\/]+$/,"").toLowerCase() === p.replace(/[\\\/]+$/,"").toLowerCase();
-    ROOT_SFX = p;
-    if(!same && TRACKS_SFX.length){
-      SFX_CARRY = new Map(TRACKS_SFX.filter(t=>t.rel && !/^[A-Za-z]:|^\//.test(t.rel)).map(t=>[t.rel.replace(/\\/g,"/").toLowerCase(), t]));
-      const n = TRACKS_SFX.length;
-      if(PLAYING && PLAYING.tab === "sfx"){ au.pause(); au.removeAttribute("src"); PLAYING = null; WAVE.peaks = null; drawWave(); updateIO();
-        $("#np").firstChild.nodeValue = "Chọn một bài để nghe"; $("#np small").textContent = ""; }
-      TRACKS_SFX.length = 0; SS.cur = -1; SS.dir = ""; SS.open.clear();
-      showRoot(); render(); await persist(); checkRoot();
-      toast(`Đã đổi thư mục SFX: ${p}. Bỏ ${n} mục của thư mục cũ, đang quét thư mục mới…`, true);
-      if(await window.musicAPI.dirExists(p)) $("#scan").click();
-      return;
-    }
-  } else { ROOT_MUSIC = p; }
+  // Moi tab dung MOT thu muc: chon thu muc (ke ca chon lai dung thu muc cu) la quet lai ngay,
+  // bo muc khong co trong thu muc nay, them file moi.
+  if(isSfx){ ROOT_SFX = p; } else { ROOT_MUSIC = p; }
   showRoot();
   await persist();
   checkRoot();
-  toast(`Đã đặt thư mục ${isSfx?'SFX':'nhạc'}: ${p}`, true);
+  if(await window.musicAPI.dirExists(p)) await scanTab();
 };
 
 // ---- Cây thư mục SFX, In/Out, sóng âm

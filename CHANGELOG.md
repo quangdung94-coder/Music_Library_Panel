@@ -1,5 +1,16 @@
 # Nhật ký thay đổi
 
+## 12/11/2026 (chiều) – Quét thư mục tự bỏ mục không còn file (cả tab Nhạc và SFX)
+- Lỗi anh báo: đổi sang thư mục SFX khác vẫn còn mục của thư mục cũ (ví dụ 03_SFX hiện 973 mục, trong đó 804 mục
+  "01 Tonal Sounds" của 05_Tonal SFX). Bản sáng chỉ dọn khi chọn thư mục KHÁC thư mục đang lưu, và chỉ ở tab SFX.
+- Sửa: `scanFolder` (main.js) trả thêm `missing` = mục trong danh sách không có trong thư mục và không còn file trên ổ.
+  `scanTab()` (index.html) bỏ các mục đó rồi thêm file mới, dùng chung cho tab Nhạc và SFX, cho nút "Quét thư mục"
+  và nút 📁 (chọn thư mục là quét luôn, kể cả chọn lại đúng thư mục cũ). Bỏ `SFX_CARRY`.
+- An toàn: bỏ từ 20 mục và hơn một nửa danh sách thì hỏi lại; thư mục không tồn tại (ổ chưa cắm) thì không bỏ gì.
+  Bài đang phát bị bỏ thì dừng phát.
+- Next/Prev: dòng bài đang phát bị thanh phát nhạc ở đáy che (cuộn kiểu "nearest" tưởng đã hiện đủ).
+  Giờ tự tính phần bị footer che; dòng bị che thì cuộn về giữa danh sách.
+
 ## 12/11/2026 (trưa) – Các mục anh duyệt + Multicam tới 9 máy
 - Tab SFX chỉ dùng một thư mục: chọn thư mục SFX khác thì bỏ danh sách cũ và tự quét thư mục mới. File trùng đường dẫn con
   (chuyển nguyên thư mục sang ổ khác) giữ tag, yêu thích, In/Out, năng lượng và không phân tích lại. Tab Nhạc giữ như cũ.

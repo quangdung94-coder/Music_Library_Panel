@@ -214,9 +214,13 @@ function scanFolder(event, dir, known) {
     try {
         if (!fs.existsSync(dir)) return { ok: false, error: 'Không tìm thấy thư mục ' + dir };
         const have = new Set((known || []).map(p => p.toLowerCase()));
-        const files = walk(dir, []).filter(p => !have.has(p.toLowerCase()))
+        const all = walk(dir, []);
+        const found = new Set(all.map(p => p.toLowerCase()));
+        const files = all.filter(p => !have.has(p.toLowerCase()))
             .map(p => ({ path: p, title: cleanTitle(path.basename(p)), ext: path.extname(p).toLowerCase() }));
-        return { ok: true, files };
+        // muc trong danh sach khong con file (da xoa, hoac thuoc thu muc cu)
+        const missing = (known || []).filter(p => p && !found.has(p.toLowerCase()) && !fs.existsSync(p));
+        return { ok: true, files, missing };
     } catch (e) { return { ok: false, error: 'Lỗi quét: ' + e.message }; }
 }
 
