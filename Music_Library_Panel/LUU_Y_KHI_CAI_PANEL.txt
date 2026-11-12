@@ -9,8 +9,8 @@
 
 2. CÁCH CÀI NHANH
 -----------------
-- Giải nén file Music_Library_Panel_v3.zip (hoặc Music_Library_Panel_v3_ban_sach.zip) trước, đừng chạy trực tiếp trong file zip.
-  Bản v3 đầy đủ có sẵn danh sách nhạc của máy chính; bản sạch thì danh sách trống, dùng cho máy khác.
+- Giải nén file Music_Library_Panel_v3.1.zip (hoặc Music_Library_Panel_v3.1_ban_sach.zip) trước, đừng chạy trực tiếp trong file zip.
+  Bản đầy đủ có sẵn danh sách nhạc của máy chính; bản sạch thì danh sách trống, dùng cho máy khác.
 - Windows: bấm đúp install_windows.bat, bấm Yes khi Windows hỏi quyền quản trị.
 - Mac: bấm chuột phải install_mac.command, chọn Open, nhập mật khẩu máy Mac
   (gõ mật khẩu sẽ không thấy chữ hiện ra, đó là bình thường).

@@ -1,5 +1,18 @@
 # Nhật ký thay đổi
 
+## 12/11/2026 (tối) – Đóng gói bản v3.1 (anh đã thử trên Resolve OK)
+- Gồm mọi sửa ngày 12/11: quét thư mục bỏ mục không còn file (Nhạc + SFX), Next cuộn đúng, SFX chỉ đo năng lượng,
+  sóng âm tính ở main.js (WAV không giới hạn dung lượng), Multicam tới 9 máy, sửa "Recorder → máy quay" (syncApply),
+  Windows bỏ qua lệnh python giả của Microsoft Store.
+- 2 bản zip ở `E:\Kho dữ liệu\Tài nguyên\` (KHÔNG đưa vào repo):
+  - `Music_Library_Panel_v3.1.zip`: bản đầy đủ, giữ sẵn danh sách 227 bài.
+  - `Music_Library_Panel_v3.1_ban_sach.zip`: danh sách nhạc trống (`const SEED = [];`), để share cho máy khác.
+- Kiểm tra: biên dịch thử main.js / preload.js / script index.html (Electron của Resolve, máy không có node), `py_compile` 4 file .py.
+  Giải nén thử cả 2 zip: mỗi bản đủ 13 file, không có `WorkflowIntegration.node`, `library.json`, `python_path.txt`,
+  `__pycache__`, `.pyc`, `.zip`, `.git`; 12 file giống hệt repo (SHA-256), `index.html` bản sạch chỉ khác dòng SEED;
+  `install_mac.command` LF + quyền chạy, `install_windows.bat` CRLF.
+- README_CAI_DAT.txt, LUU_Y_KHI_CAI_PANEL.txt: đổi tên bản thành v3.1.
+
 ## 12/11/2026 (chiều) – Quét thư mục tự bỏ mục không còn file (cả tab Nhạc và SFX)
 - Lỗi anh báo: đổi sang thư mục SFX khác vẫn còn mục của thư mục cũ (ví dụ 03_SFX hiện 973 mục, trong đó 804 mục
   "01 Tonal Sounds" của 05_Tonal SFX). Bản sáng chỉ dọn khi chọn thư mục KHÁC thư mục đang lưu, và chỉ ở tab SFX.

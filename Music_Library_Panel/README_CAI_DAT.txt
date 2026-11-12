@@ -1,4 +1,4 @@
-﻿HƯỚNG DẪN CÀI PANEL MUSIC LIBRARY CHO DAVINCI RESOLVE (Windows và macOS) – BẢN v3
+﻿HƯỚNG DẪN CÀI PANEL MUSIC LIBRARY CHO DAVINCI RESOLVE (Windows và macOS) – BẢN v3.1
 ======================================================================
 
 Panel có 3 tab: Nhạc, SFX và Audio Sync. Tab Audio Sync có 2 chế độ:
